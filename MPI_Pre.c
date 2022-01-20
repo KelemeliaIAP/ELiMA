@@ -66,8 +66,8 @@ void PreIntegration (int rank, int size, int series, double *set_parmtrs, double
 	MPI_Aint disp[6] = {0, 0, 0, 0, 0, 0};
 	MPI_Aint IdDisp[7] = {0, 0, 0, 0, 0, 0, 0};
 	// конструируем тип
-	MPI_Type_struct(6, blocklen, disp, type, &strtype);
-	MPI_Type_struct(7, IdBlocklen, IdDisp, IdType, &IdData);
+	MPI_Type_create_struct(6, blocklen, disp, type, &strtype);
+	MPI_Type_create_struct(7, IdBlocklen, IdDisp, IdType, &IdData);
 	// реестрация типа
 	MPI_Type_commit(&strtype);
 	MPI_Type_commit(&IdData);

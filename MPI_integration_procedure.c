@@ -91,7 +91,7 @@ void Integration(double (*function3D)(double, double, double, double*),
 		/*Смещение каждого блока, измеряемые в байтах*/					//
 	arhsets = 0;														//
 		/*Собственно создание новой структуры*/							//
-    MPI_Type_struct( 1, &arhblklens, &arhsets, &arhtypes, &Strtype);	//
+    MPI_Type_create_struct( 1, &arhblklens, &arhsets, &arhtypes, &Strtype);	//
 		/*Реестрация новой структуры*/									//
 	MPI_Type_commit( &Strtype );										//
 	//////////////////////////////////////////////////////////////////////
@@ -108,7 +108,7 @@ void Integration(double (*function3D)(double, double, double, double*),
 	offsets[0] = 0;														//
     MPI_Type_size(MPI_INT, &offsets[1]);						//
 		/*Собственно создание новой структуры*/							//
-    MPI_Type_struct( 2, blklens, offsets, oldtypes, &sndrcvmsg );		//
+    MPI_Type_create_struct( 2, blklens, offsets, oldtypes, &sndrcvmsg );		//
 		/*Реестрация новой структуры*/									//
 	MPI_Type_commit( &sndrcvmsg );									//
 	//////////////////////////////////////////////////////////////////////
@@ -125,7 +125,7 @@ void Integration(double (*function3D)(double, double, double, double*),
 	offsets[0] = 0;														//
     MPI_Type_size(MPI_INT, &offsets[1]);						//
 		/*Собственно создание новой структуры*/							//
-    MPI_Type_struct( 2, blklens, offsets, oldtypes, &sndrcvcount );		//
+    MPI_Type_create_struct( 2, blklens, offsets, oldtypes, &sndrcvcount );		//
 		/*Реестрация новой структуры*/									//
 	MPI_Type_commit( &sndrcvcount );									//
 	//////////////////////////////////////////////////////////////////////
@@ -391,7 +391,7 @@ void Integration(double (*function3D)(double, double, double, double*),
 						offsets[0] = 0;												//
 						MPI_Type_size(MPI_INT, &offsets[1]);						//
 							/*Собственно создание новой структуры*/							//
-						MPI_Type_struct( 2, blklens, offsets, oldtypes, &sndrcvdata );		//
+						MPI_Type_create_struct( 2, blklens, offsets, oldtypes, &sndrcvdata );		//
 							/*Реестрация новой структуры*/									//
 						MPI_Type_commit( &sndrcvdata );										//
 						//////////////////////////////////////////////////////////////////////
@@ -606,7 +606,7 @@ void Integration(double (*function3D)(double, double, double, double*),
 					offsets[0] = 0;														//
 					MPI_Type_size(MPI_INT, &offsets[1]);						//
 						/*Собственно создание новой структуры*/							//
-					MPI_Type_struct( 2, blklens, offsets, oldtypes, &sndrcvdata );		//
+					MPI_Type_create_struct( 2, blklens, offsets, oldtypes, &sndrcvdata );		//
 						/*Реестрация новой структуры*/									//
 					MPI_Type_commit( &sndrcvdata );										//
 					//////////////////////////////////////////////////////////////////////

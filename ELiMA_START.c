@@ -13,10 +13,11 @@
 // Пути к файлам
 //#define FILEPATH "\"D:\\01_Khelemelia\\02_IAP\\07_Programming\\01_MPI_C\\01_MPI_Projects\\01_MPI_ELI\\ELiMA.v.5.04\\Debug\\ELiMA.v.5.04.exe\""
 
+//#define FILEPATH "\"D:\\01_Khelemelia\\02_IAP\\04_Projects\\ELiMA\\EliMA_WORK\\ELiMA_Programming\\ELiMA\\x64\\Debug\\ELiMA.exe\""
 #define FILEPATH "\"D:\\01_Khelemelia\\02_IAP\\04_Projects\\ELiMA\\EliMA_WORK\\ELiMA_Programming\\ELiMA\\x64\\Debug\\ELiMA.exe\""
 //#define FILEPATH "\"D:\\01_Khelemelia\\02_IAP\\07_Programming\\01_MPI_C\\01_MPI_Projects\\01_MPI_ELI\\ELiMA.v.5.05\\Debug\\ELiMA.v.5.05.exe\""
 //#define FILEPATH "\"D:\\01_Khelemelia\\02_IAP\\07_Programming\\01_MPI_C\\01_MPI_Projects\\01_MPI_ELI\\ELIA.v.1.04\\Debug\\ELIA.v.1.04.exe\""
-#define DATAFILEPATH "C:\\Program Files\\MPICH2\\bin\\data.dat"
+#define DATAFILEPATH "D:\\01_Khelemelia\\02_IAP\\04_Projects\\ELiMA\\EliMA_WORK\\MPI_Results\\data.dat"
 
 // функция записи параметров в файл.
 // Принимает:
@@ -58,14 +59,18 @@ int main( int argc, TCHAR *argv[] )
 	char **nameparmtrs;
 	double unionvectorV[3];
 	double vectorV[3];
-
+	char executeProg[] = "mpiexec";
+	char executePrmtrs[] = " -n 4 ";
+	char progName[] = "D:\\01_Khelemelia\\02_IAP\\04_Projects\\ELiMA\\EliMA_WORK\\ELiMA_Programming\\ELiMA\\x64\\Debug\\ELiMA.exe";
+	char cmdLine[BUFSIZ];
 	// about TCHAR and LPTSTR read on:
 		// http://habrahabr.ru/post/164193/
 //	TCHAR *adrProgram = _T(" cpi.exe"); // an adress of triggered programm;
 									
 	TCHAR *adrProgram = _T(FILEPATH); 
-	TCHAR *parameters = _T(" -n 4 ");	// parameters of exec program;
+	TCHAR *parameters = _T("\" -n 4 \"");	// parameters of exec program;
 	TCHAR *adrExecProg = _T("\"C:\\Program Files\\Microsoft MPI\\Bin\\mpiexec.exe\"");
+///	TCHAR* adrExecProg = _T("\"C:\\Program Files\\Microsoft MPI\\Bin\\mpiexec.exe\"");
 										// an adress of the executable program;
 	LPTSTR szCmdline;		// a full command name;
 
@@ -146,13 +151,18 @@ int main( int argc, TCHAR *argv[] )
 		return 1;
 	}
 
+	strcpy_s(cmdLine,sizeof cmdLine, executeProg);
+	strcat_s(cmdLine, sizeof cmdLine, executePrmtrs);
+	strcat_s(cmdLine, sizeof cmdLine, progName);
+	fprintf(stdout, "%s", cmdLine);
+	system(cmdLine);
 	szCmdline = (TCHAR *)malloc(400*sizeof(TCHAR));
 	// Create a full command name consist of:
 		// 1-st --- an adress of the executable program (adrExecProg)
 		// 2-nd --- parameters of exec program (parameters)
 		// 3-rd --- an adress of triggered programm (adrProgram)
 	wsprintf(szCmdline, L"%s%s%s", adrExecProg, parameters, adrProgram);
-	fprintf(stdout, "%s%s%s", adrExecProg, parameters, adrProgram);
+
 
 	if (!CreateProcess( NULL,   // No module name (use command line)
 		szCmdline ,      // Command line
@@ -165,7 +175,9 @@ int main( int argc, TCHAR *argv[] )
 		&si,            // Pointer to STARTUPINFO structure
 		&pi )           // Pointer to PROCESS_INFORMATION structure
 	) {
+		fprintf(stdout, "%s", pi);
 		Sleep(10);				// подождать
+		//MessageBox(HWND_DESKTOP, "Unable to start program", "", MB_OK);
 		TerminateProcess(pi.hProcess,NO_ERROR);	// убрать процесс
 	}
 	// Wait until child process exits.
@@ -196,6 +208,7 @@ int dataFileWrite(char *file_name, double low, double up, double step, double *p
 	}
 
 	if(fopen_s(&data_file, file_name, "w+")){ // не открывается файл для записи
+		fprintf(stdout, "%s", file_name);
 		*msg = "dataFileWrite(Errorcode_0AC): Can't create datafile\n";
 		return 1;
 	}
