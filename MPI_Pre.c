@@ -166,6 +166,7 @@ void PreIntegration (int rank, int size, int series, double *set_parmtrs, double
 ///%%%%%%%%%%%%%%%%%%%%
 	/////////////////////////////////////////////////////////////
 	//Integration(ELiMA, series, set_parmtrs, rank, size, count, list, &subSumm, &tempstep, bounds);
+	fprintf(stdout, "Proc %d(%d) start!\n", rank, size);
 	Integration(ELIA, series, set_parmtrs, rank, size, count, list, &subSumm, &tempstep, bounds);
 ///%%%%%%%%%%%%%%%%%%%%	
 	//Integration(ELI, series, set_parmtrs, rank, size, count, list, &subSumm, &tempstep, bounds);

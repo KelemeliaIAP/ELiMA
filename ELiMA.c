@@ -119,7 +119,7 @@ int main (int argc, char **argv) {
 	//	fflush(LOGfile);
 	//}
 	
-
+	fprintf(stdout, "Hello");
 	// Program is valid when more than one processors
 	if (rank == 0) {
 		if(size <= 1) {
@@ -155,7 +155,7 @@ int main (int argc, char **argv) {
 		set_parmtrs[8] = tau_parallel(atof(argv[7]), atof(argv[6])); //(Te_par, Te_per)
 	
 	}
-
+	fprintf(stdout, "Wellcom to integation");
 		//////////////////////////////////////////////////////////////////
 		// Call intagration function
 		//////////////////////////////////////////////////////////////////
