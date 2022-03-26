@@ -49,6 +49,8 @@ double ELI(double x, double k, double* parameter);
 	// Ee = m_e*c^2 =  5.11 E5 eV
 double delta (double Te_per);
 
+double delta_norm (const double velosity_ion, const double velosity_e,  const double frequency_Eplasma, const double frequency_Ecyclotron);
+
 // ПРИНИМАЕТ: значение нормированой скорости иона, V_i/V_0
 	//		и значение температуры електронного газ, Te
 // ВОЗРАЩАЕТ: значение параметра tau_i, равного
@@ -79,6 +81,8 @@ double ELIA(double gx, double gy, double gz, double* parmtr);
 // ВОЗВРАЩАЕТ: значение функции, представленной в работе 
 	// Хелемели А.В. Потери в замагниченном электронном газе... 
 double ELiMA(double gx, double gy, double gz, double* parmtr);
+
+double elimaH(double gx, double gy, double gz, double* parmtr);
 
 
 #endif

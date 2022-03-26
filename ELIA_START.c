@@ -7,7 +7,8 @@
 #include<io.h>
 
 // adress of executed program
-#define FILEPATH "D:\\01_Khelemelia\\02_IAP\\07_Programming\\01_MPI_C\\01_MPI_Projects\\HelloWorld\\x64\\Debug\\HelloWorld.exe"
+#define FILEPATH "d:\\01_Khelemelia\\02_IAP\\04_Projects\\ELiMA\\EliMA_WORK\\ELIMA_programming\\ELiMA_git\\ELiMA\\ELiMA\\ELiMA\\x64\\Debug\\ELiMA.exe"
+//#define FILEPATH "D:\\01_Khelemelia\\02_IAP\\07_Programming\\01_MPI_C\\01_MPI_Projects\\HelloWorld\\x64\\Debug\\HelloWorld.exe"
 										
 // procedure dataFileWrite
 // income:
@@ -73,7 +74,9 @@ int main( int argc, TCHAR *argv[] )
 	double unionMagnVector[3];		// union magnetic vector component
 	double vectorMagnStrength[3];	// array for velocity vector components
 
-	char *adrDateFile = "D:\\01_Khelemelia\\02_IAP\\07_Programming\\01_MPI_C\\01_MPI_Projects\\HelloWorld\\data.dat";
+	/*char *adrDateFile = "D:\\01_Khelemelia\\02_IAP\\07_Programming\\01_MPI_C\\01_MPI_Projects\\HelloWorld\\data.dat";*/
+	char* adrDateFile = "d:\\01_Khelemelia\\02_IAP\\04_Projects\\ELiMA\\EliMA_WORK\\ELIMA_programming\\ELIMA_git\\ELiMA\\ELiMA\\data.dat";
+
 										//file to record parameters  xx
 	char *parmtrsExecProg = " -n 4 ";	// parameters of exec program;
 	char* adrExecProg = "mpiexec";		// execute program
@@ -125,25 +128,38 @@ int main( int argc, TCHAR *argv[] )
 	arrayParmtrValue[7] = vectorMagnStrength[1];// Hy
 	arrayParmtrValue[8] = vectorMagnStrength[2];// Hz
 	arrayParmtrValue[9] = magnFieldValue;		//|H|
+	
+	//display parameters
 	for(i = 0; i < countParmtrs; i++) {
 		fprintf(stdout, "%s\t%e\n", arrayParmtrName[i], arrayParmtrValue[i]);
 	}
+
+	//write parameters to a file
 	if (dataFileWrite(adrDateFile, countParmtrs, arrayParmtrName, arrayParmtrValue, &msg)) {
 		fprintf(stdout,"%s", msg);
 		_getch();
 		return 1;
 	}
 
+	//create comandline
 	strcat(commandLine, adrExecProg);
 	strcat(commandLine, parmtrsExecProg);
 	strcat(commandLine, FILEPATH);
-	fprintf(stdout, "%s\n", commandLine);
+
+
+	//fprintf(stdout, "%s\n", commandLine);
 	
+	//run executed program
 	system(commandLine);
 	
+	//clear memory
 	free(arrayParmtrName);
 	free(arrayParmtrValue);
+	
+	// signal of the end
 	fprintf(stdout, "\a");fflush(stdout);
+	
+	// wait a tap 
 	_getch();
 }
 

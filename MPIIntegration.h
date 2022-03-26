@@ -7,7 +7,8 @@
 	//			3. IN Порядковый номер запуска подпрограммы
 	//			4. IN Параметры задачи
 // ВОЗВРАЩАЕТ:	5. INOUT результат интегрирования
-void PreIntegration (int rank, int size, int series, double *parameters, double *result);
+//void PreIntegration (int rank, int size, int series, double *parameters, double *result, double *worktime);
+void PreIntegration(int rank, int size, int series, double* parameters, double* result);
 
 
 #endif
