@@ -17,38 +17,49 @@
 void Integration(double (*function3D)(double, double, double, double*), 
 						int series, double *parameter, int myid, int size, int count, 
 						MyStr *listINcom, double *subSumm, int *step, double *bounds) { 
-	int KEY_exit = 1;  // ключ выхода из цикла интегрирования
-	int incount= 0; //количество входящих заданий
+	int KEY_exit = 1;	// key of exit from integration loop
+	int incount= 0;		//count of income tasks 
 
 	////////////////////////////////////////////////////////////////////////
-	/// Таги ключей сообщений
-	// tag 10 - количество отсылаемых(получаемых) дополнительных заданий (sendcount)
-	// tag 11 - отсылаемые(получаемые) дополнительные задания
-	// tag 12 - запрос на дополнительные задания
-	// tag 13 - извещение об отсутсвии заданий для выполнения
-	MPI_Status *status13r;
-	MPI_Status status12r;
+	/// Tags-key of messages between coprocessors 
+	// tag 10 - for count of send(receive) additional tasks
+	// tag 11 - for send(receive) additional tasks
+	// tag 12 - for send(receive) request on additional tasks
+	// tag 13 - for send(receive) announce about no task to perfome
+	
+	///////////////////////////////////////////////////////////////
+	// MPI statuses of received messages
 	MPI_Status status10s;
 	MPI_Status status10r;
 	MPI_Status status11r;
+	MPI_Status status12r;
+	MPI_Status* status13r; // 13r - no tasks, received (array from all co-processors)
+
+	/////////////////////////////////////////////////////////////
+	// MPI requests 
 	MPI_Request req10r = MPI_REQUEST_NULL;
 	MPI_Request req12s = MPI_REQUEST_NULL;
 	MPI_Request req12r;
 	MPI_Request *req13r;
-	int flag12s = 1;
-	int flag12r = 1;
+	
+	///////////////////////////////////////////////////////////
+	// flags
 	int flag10s;
 	int flag10r = 0;
 	int flag11r = 1;
+	int flag12s = 1;
+	int flag12r = 1;
 	int *flag13r;
-	int countsend;
+
 	int k, i, j;			// iterators
-	int *flagexitIn;
-	int *IncreaseProcId;
-	int *LeaveProcId;
-	int LeaveN = 0;
-	int LeaveJ = 0;
-	int bye = 1;
+
+	int countsend;		//count of sended messages 
+	int *flagexitIn;	//coprocessor leave(no leave) procedure
+	int *IncreaseProcId;//list of coprocessors for each processor
+	//int *LeaveProcId;	
+	//int LeaveN = 0;
+	//int LeaveJ = 0;
+	//int bye = 1;
 	int InN;
 	int InNTemp;
 	int Inj;
@@ -59,17 +70,18 @@ void Integration(double (*function3D)(double, double, double, double*),
 	int *signallAsk;
 
 	MyStr *list;
-	int *INcountcompare;	// количество задач в возрастающем потоке
-
-
-	double subBubble;	
+	int *INcountcompare;	// preliminary information on the available count of tasks 
+	
+							////////////////////////////////////////
+	// Simpson integration variables
+	double subBubble;
 	double subCells;
-	double stepIterationX, stepIterationY, stepIterationZ; // шаги итерации
-	double func;	// промежуточное значение функции
-	double lowX;	// нижняя граница по Х
-	double lowY;	// нижняя граница по Y
-	double lowZ;	// нижняя граница по Y
-	double X, Y, Z;	// переменные интегрирования
+	double stepIterationX, stepIterationY, stepIterationZ; // a dinamic step of integration 
+	double func;	// a calculated function value
+	double lowX;	// a low boundary of dimension X
+	double lowY;	// a low boundary of dimension Y
+	double lowZ;	// a low boundary of dimension Z
+	double X, Y, Z;	// variables of integration
 	double t, u;	// Simpson`s coefficient for 1D
 	double r, s;	// rize range of Simpson`s coefficient to 2D
 	double o, p;	// rize range of Simpson`s coefficient to 3D
@@ -149,7 +161,7 @@ void Integration(double (*function3D)(double, double, double, double*),
 	// Список соседних процессов для каждого процесса;
 	IncreaseProcId = (int*)malloc(size*sizeof(int));
 	// Список рабочих (или завершивших работу) процессов;
-	LeaveProcId = (int*)malloc(size*sizeof(int));
+	//LeaveProcId = (int*)malloc(size*sizeof(int));
 	// Список флагов на вхоящие задания;
 	signallIncom = (int *)malloc(size*sizeof(int));
 	// Список флагов запросов на дополните задания;
@@ -168,33 +180,29 @@ void Integration(double (*function3D)(double, double, double, double*),
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////
-	/// для каждого процесса выстраивается новое множество последовательности 
-	/// соседних процессов InProcId, где данный процес является корневым(root = 0),
-	/// а все последующие процессы выстаиваются в ряд по мере возрастания их порядкового номера
-	/// пример: процесс 4, общее число процессов 6
-	///			4(0), 5(1), 0(2), 1(3), 2(4), 3(5),
-	///          где первый номер действительный, 
-	///			а в скобках - номер в новом множестве
+	/// example: processors 4, size of processors set is 6
+	///			5(1), 0(2), 1(3), 2(4), 3(5),
+	///         start indexing of co-processors from 1, 
 	for(i = myid; i < size; i++) {
 		IncreaseProcId[i-myid] = i;
 	}
 	for(i = 0; i < myid; i++) {
 		IncreaseProcId[size-myid+i] = i;
 	}
-	InN = size-1;	// количество элементов в восходящем списке
+	InN = size-1;	// count of co-processors 
 	InNTemp = InN;	// 
-	Inj = 1;		// порядковый номер запрашиваемого процесса(восх),
-	Inprev = 0;		// предыдущий запрашиваемый процесс
-					//	 в начале им является, собственно, корневой процесс
+	Inj = 1;		// serial number of a source co-processor ,
+	Inprev = 0;		// serial number of a previous source co-processor
 
+	// assign start value 
 	for (k = 1; k < size; k++) {																//
 		signallIncom[k] = 1;																		//
 	}
 
-	// Обнуляем счетчики :
-	// 1) сигналов о получениии сигналов о выходе
-	// 2) полученных сигналов об отсутствии дополнительных заданий
-	// 3) очереди на получение сигналов о выходе
+	// assign start value :
+	// 1) flag-key: have co-processors left procedure?
+	// 2) flag-key: no additional tasks
+	// 3) request on co-processors procedure leaving 
 	for (k = 1; k < size; k++) {																//
 		flagexitIn[k] = 0;
 		flag13r[k] = 0;
@@ -206,13 +214,9 @@ void Integration(double (*function3D)(double, double, double, double*),
 		signallAsk[k] = 1;																		//
 	}																							//
 
-	KEY_exit = 1;			// ключ выхода
-//	/////////////////////////////////////////////////////////////////////////
-//	//..вход в основное тело цикла,											/
-//	// где проводится обработка полученных заданий count					/
-//	/////////////////////////////////////////////////////////////////////////
-//	fprintf(stdout, "@\n");
-//	fflush(stdout);
+	KEY_exit = 1;			// Key of exit
+
+	// interception of artifacts
 	for(i=1; i <= InN; i++) {
 		MPI_Iprobe(IncreaseProcId[i], 10, MPI_COMM_WORLD, &flag10s, &status10s);
 		if(flag10s) {
@@ -225,29 +229,24 @@ void Integration(double (*function3D)(double, double, double, double*),
 			MPI_Recv(intbuf, 1, sndrcvcount, IncreaseProcId[i], 10, MPI_COMM_WORLD, &status10s);			
 		}
 	}
-//	fprintf(stdout, " myid %d list[0].lowX = %f, list[0].upX = %f \n", myid, listINcom[0].lowX, listINcom[0].upX); fflush(stdout);
-//	fprintf(stdout, " myid %d list[0].upX = %f, list[0].upX = %f \n", myid, UPX, UPY); fflush(stdout);
-	//for (j = 0; j <=4; j++) {
-	//	for (i = 0; i <=4; i++) {
-	//		
-	//	}
-	//}
 
+	//	fprintf(stdout, " myid %d list[0].lowX = %f, list[0].upX = %f \n", myid, listINcom[0].lowX, listINcom[0].upX); fflush(stdout);
+	//	fprintf(stdout, " myid %d list[0].upX = %f, list[0].upX = %f \n", myid, UPX, UPY); fflush(stdout);
 
 	while (KEY_exit > 0) {
 		int seriestmp12;
 		while(count) {
-			// сделан проход по циклу
+			// count of iterations
 			*step+=1;
-			//шаги итераций
+
+			// elemental current interval of integration
 			stepIterationX = fabs(list[count].upX - list[count].lowX) / 4.0;
 			stepIterationY = fabs(list[count].upY - list[count].lowY) / 4.0;
 			stepIterationZ = fabs(list[count].upZ - list[count].lowZ) / 4.0;
-			//if (myid == 0) {
-			//	fprintf(stdout, "z= %f, y= %f\n", list[count].lowZ, list[count].lowY); fflush(stdout);
-			//}
-			//промежуточные суммы
+
+			//intermediate summs
 			subBubble = 0.0; subCells = 0.0;
+
 			//double o, p;	// Simpson`s coefficient for 1D
 			for (i=0; i<=4; i++) {
 				Z = list[count].lowZ + i*stepIterationZ; //Z
@@ -263,6 +262,7 @@ void Integration(double (*function3D)(double, double, double, double*),
 					o=4;
 					p=0;
 				}
+
 				//	double r, s;	// rize range of Simpson`s coefficient to 2D
 				for (j=0; j<=4; j++) {
 					Y = list[count].lowY + j*stepIterationY ; //Y
@@ -278,6 +278,7 @@ void Integration(double (*function3D)(double, double, double, double*),
 						r=4;
 						s=0;
 					}
+
 
 					//	double t, u;	// rize range of Simpson`s coefficient to 3D
 					for (k=0; k<=4; k++) {
@@ -311,10 +312,8 @@ void Integration(double (*function3D)(double, double, double, double*),
 			// DE-преобразования, значение subCells -> 0
 			// Как результат, получаемая точность превышает нужную
 			// Вывод: условие относительной ошибки сильно замедляет работу проограммы
-			if (fabs(subCells-subBubble) > PRECISION) { 			
-															// не нужно ставить ">=" ,поскольку, 
-															//когда subCells = 0, и subBubble = 0, 
-															//то получаем замкнутый цикл
+
+			if (fabs(subCells-subBubble) > PRECISION) { // don't use '>='
 				lowX = list[count].lowX;
 				lowY = list[count].lowY;
 				lowZ = list[count].lowZ;
@@ -337,14 +336,15 @@ void Integration(double (*function3D)(double, double, double, double*),
 				*subSumm += subCells;
 				count -= 1;
 			}
-			if (count >= 5) {
+			if (0) {
+			//if (count >= 5) {
 				if (flag12r) {
 					MPI_Irecv(&seriestmp12, 1, MPI_INT, MPI_ANY_SOURCE, 12, MPI_COMM_WORLD, &req12r);
 				}
 				MPI_Test(&req12r, &flag12r, &status12r);
 				if (flag12r) {
-					//fprintf(stdout, "proc %d recv from %d ask for tasks with series%d\n", myid, status12r.MPI_SOURCE, seriestmp);
-					//fflush(stdout);
+					fprintf(stdout, "proc %d recv from proc %d ask for tasks with series %d\n", myid, status12r.MPI_SOURCE, series);
+					fflush(stdout);
 					if (seriestmp12 == series) {
 						MPI_Datatype sndrcvdata;
 						double *bufdatasend;
@@ -402,10 +402,13 @@ void Integration(double (*function3D)(double, double, double, double*),
 						MPI_Pack(&intbuf[0], 1, MPI_INT, bufdatasend, countsend*strtypesize+mpiintsize, &position, MPI_COMM_WORLD);
 						MPI_Pack(sendlist, countsend, Strtype, bufdatasend, countsend*strtypesize+mpiintsize, &position, MPI_COMM_WORLD);
 
+						fprintf(stdout, "proc %d pack tasks to proc %d %d(%d) tasks\n", myid, status12r.MPI_SOURCE, countsend, intbuf[1]);
+						fflush(stdout);
+
 						MPI_Send(bufdatasend, 1, sndrcvdata, status12r.MPI_SOURCE, 11, MPI_COMM_WORLD);
 						//MPI_Send(sendlist, 6*countsend, Strtype, status12r.MPI_SOURCE, 11, MPI_COMM_WORLD);
-			//			fprintf(stdout, "proc %d send to proc %d %d(%d) tasks\n", myid, status12r.MPI_SOURCE, countsend, intbuf[1]);
-			//			fflush(stdout);
+						fprintf(stdout, "proc %d send to proc %d %d(%d) tasks\n", myid, status12r.MPI_SOURCE, countsend, intbuf[1]);
+						fflush(stdout);
 						free(bufdatasend);
 						free(sendlist);
 						MPI_Type_free(&sndrcvdata);
@@ -416,43 +419,38 @@ void Integration(double (*function3D)(double, double, double, double*),
 		///////////////////////////////////////////////////////////////////
 		//	if(count == 0) 	// е. у процесса закончились задания	///
 		///////////////////////////////////////////////////////////////////
-	//break;	
+	//break;
+		fprintf(stdout, "proc %d: no tasks\n", myid); fflush(stdout);
 	while(!count) {
-		KEY_exit = 0;
-		break;
+		//KEY_exit = 0;
+		//break;
 		int inbuf[2];
 		int outbuf[2]; 
-		int byebuf;
+		int byebuf=0;
 		int seriestmp10;
 ///
 ///получить сообщения о прекращении работы других процессов
 ///
 		for(i = 1; i <= InNTemp; i++) {
-			if(!flagexitIn[i]){ //единажды принятие выхода от других процессов
-//				MPI_Irecv(&bye, 1, MPI_INT, IncreaseProcId[i], 13, MPI_COMM_WORLD, &req13r[i]);
+			if(!flagexitIn[i]){ //flag on request: is coprocessors leave procedure?
+				// nonblock request on receiving leaving message
 				MPI_Irecv(&byebuf, 1, MPI_INT, IncreaseProcId[i], 13, MPI_COMM_WORLD, &req13r[i]);
+				// no requests more
 				flagexitIn[i] = 1;
-			}
-			if(!flag13r[i]) {
+			}	
+			if(!flag13r[i]) { //TEST: Have leaving message already been received?
 				MPI_Test(&req13r[i], &flag13r[i], &status13r[i]);
 			}
-/// е. здесь будут вноситься какие-нибудь изменения, 
-/// не забыть их зделать в нижней части программы
-        //...Попросить дополнительные задания
-		// поставить новый флаг, связанный с flag11r
-			if (flag13r[i]) {
+
+			if (flag13r[i]) { // Leaving message have already been received
+				//test is series correct (Is this message no artifact?);
 				int seriestmp13;
 				seriestmp13 = byebuf;
 				if (seriestmp13 == series) {
-	//				fprintf(stdout, "proc %d know proc %d has left program\n", myid, IncreaseProcId[i]);
-	//				fflush(stdout);
+					fprintf(stdout, "proc %d know proc %d has left program\n", myid, IncreaseProcId[i]);
+					fflush(stdout);
 					InNTemp --;
-					// е. запрашиваемый на дополнительные задания процес вышел,
-					// то запрос на дополнительные задания отменяется
-	///
-	///е. сообщение о прекращении работы процессом принято, тогда
-	/// изымаем его из списка рабочих процессов
-	///     
+					// cancel request on count of additional tasks
 					if (Inj == i) {
 						flag11r = 1;
 						if (!flag10r) {
@@ -460,6 +458,7 @@ void Integration(double (*function3D)(double, double, double, double*),
 							flag10r = 1;
 						}
 					}
+					// remove co-processors from list 
 					if(Inj > i) {
 						Inj --;
 					}
@@ -471,105 +470,80 @@ void Integration(double (*function3D)(double, double, double, double*),
 						req13r[j] = req13r[j+1];
 						flag13r[j] = flag13r[j+1] ;
 					}
-				} else {
+				} else { //series is  uncorrect: This message is artifact.;
+					// reassign flag value (ready for monitoring on leaving message)
 					flagexitIn[i] = 0;
 					flag13r[i]=0;
 //					req13r[i] = 0;
 				}
 			}
         }
-        ///
-        /// Сделать вставку на удаление отосланных сообщений процессу, завершившему свою работу
-        ///
-///
-/// е. нет работающих процессов, то завершаем работу
-///
-        InN = InNTemp; // новое число рабочих процессов;
-		if (InN == 0) {//если нет рабочих процессов, то выход
+
+		InN = InNTemp; // reassign count of working co-processors;
+
+		//It's no working co-processors more
+		if (InN == 0) {
 			if (!flag12r) {
+				//cancell request on additional tasks
 				MPI_Cancel(&req12r);
 			}
 			if (!flag10r) {
+				//cancell request on count of  additional tasks
 		        MPI_Cancel(&req10r);
 			}
 			//fprintf(stdout, "proc %d leaving caused by no more processes\n", myid);	fflush(stdout);
 			KEY_exit  = 0;
 			break;
 		}
-///
-/// СДЕЛАТЬ и ВЫПОЛНИТЬ запрос на дополнительные задания
-///
+		
+		// ASK additional tasks
 		if (flag11r) {
 			int tmp = series;
 			MPI_Send(&tmp, 1, MPI_INT, IncreaseProcId[Inj], 12, MPI_COMM_WORLD);
 		}
-		// получение запрос на дополнительные задания
-		// и отсылка сообщения об отсутствии дополнительных заданий
-///
-/// СДЕЛАТЬ и по-возможности ПОЛУЧИТЬ запрос на дополнительные задания
-///
-        //..Получить запрос на дополнительные задания
+
+		// TEST: Do we have an ask on additional rasks
         if (flag12r) {
             MPI_Irecv(&seriestmp12, 1, MPI_INT, MPI_ANY_SOURCE, 12, MPI_COMM_WORLD, &req12r);										////
             flag12r = 0;																									////
         }
         MPI_Test(&req12r, &flag12r, &status12r);
  
-///
-/// е. запрос на дополнительные задания ПОЛУЧЕН, 
-/// тогда СДЕЛАТЬ и ПОСЛАТЬ сообщение, что дополнительных заданий НЕТ
-///    //..Оптравить сообщение, что дополнительных заданий нет. Обнулить счетчик данного процесса
-			// е. запрашиваемый процесс вышел, то сообщение не нужно отправлять
-		if (flag12r) {
-			//fprintf(stdout, "proc %d has %d series and recv %d tmpser\n", myid, series, seriestmp);
+		if (flag12r) { //ask have been received
+			//fprintf(stdout, "proc %d has %d series and recv %d tmpser\n", myid, series, series);
 			//fflush(stdout);
-			if(series == seriestmp12) { // е. серийник полученного сообщения соответствует 
-												// серийнику выполняемого общего задания, тогда...
+			if(series == seriestmp12) { 
 				outbuf[0] = series;
 				outbuf[1] = 0;
+				//send msg: 'no task'
 				MPI_Send(outbuf, 2, MPI_INT, status12r.MPI_SOURCE, 10, MPI_COMM_WORLD);
 				countsend = 0;
 				flag12r = 1;
-				//MPI_Send(&countsend, 1, MPI_INT, status12r.MPI_SOURCE, 10, MPI_COMM_WORLD);
 			} 
         }
-///
-/// СДЕЛАТЬ и по-возможности ПОЛУЧИТЬ сообщение 
-/// о КОЛИЧЕСТВЕ запрашиваемых дополнительных заданий
-///     //.. получение дополнительных заданий
-        if (flag11r) {
-			//MPI_Irecv(&incount, 1, MPI_INT, IncreaseProcId[Inj], 10, MPI_COMM_WORLD, &req10r);
+
+		//TEST: Have additional messages been send?
+		if (flag11r) {
             MPI_Irecv(inbuf, 2, MPI_INT, IncreaseProcId[Inj], 10, MPI_COMM_WORLD, &req10r);
-            //MPI_Irecv(&intbuf[1], 2, MPI_INT, IncreaseProcId[Inj], 10, MPI_COMM_WORLD, &req10r);
             flag11r = 0;
             flag10r = 0;
         }
         MPI_Test(&req10r, &flag10r, &status10r);
 
-///
-///е. ПОЛУЧЕНО сообщение с количеством дополнительных заданий, 
-/// тогда получить это количество заданий
-///
-        if (flag10r) {
-			//flag10r = 0;
-			flag11r = 1;    // флаг принятия сообщения
-					//			MPI_Unpack(intbuf, 2*sizeof(int), &position, &seriestmp, 1, MPI_INT, MPI_COMM_WORLD);
+		//additional tasks is send
+		if (flag10r) {
+			flag11r = 1;    
 			seriestmp10 = inbuf[0];
 			if (seriestmp10 == series) 
 			{
-				//MPI_Unpack(intbuf, 2*sizeof(int), &position, &incount, 1, MPI_INT, MPI_COMM_WORLD);
 				incount = inbuf[1];
 				//fprintf(stdout, "proc %d recv from proc %d %d tasks\n", myid, status10r.MPI_SOURCE, incount);
 				//fflush(stdout);
-			/// е. количество равно 0, то обнулить счетчик отправившего процесса
-			   if (incount == 0) { // пришло пустое сообщение
-//					flag11r = 1;    // флаг принятия сообщения
+				//test is set of task empty?
+			   if (incount == 0) { 
 					i = 0;
-					signallIncom[Inj] = 0; // обозначение отсутствия заданий процесса,
-												//отправившего пустое сообщение
-			/// изменить порядковый номер запрашиваемого процесса
-			/// е. в предыдущем запросе было меньше заданий, пор.номер возрастает
-			/// иначе пор.номер спадает
+					signallIncom[Inj] = 0; // sender does not have tasks
+					//ready to ask next co-processor
 					if ((Inj <= (InN)) && (Inj > 0)) {
 						if (incount >= INcountcompare[Inprev] ) {
 							Inprev = Inj;
@@ -587,10 +561,8 @@ void Integration(double (*function3D)(double, double, double, double*),
 							}
 						}
 					}
-			/// е. количество больше 0, то СДЕЛАТЬ и ПОЛУЧИТЬ сообщение с
-			/// дополнительными заданиями
-			/// активировать счетчик заданий процесса
-				} else if (incount > 0) {
+					//additional task is presented
+			   } else if (incount > 0) {
 					MPI_Datatype sndrcvdata;
 					int seriestmp11;
 					int position = 0;
@@ -616,7 +588,6 @@ void Integration(double (*function3D)(double, double, double, double*),
 //					fprintf(stdout, "proc %d recv from %d list of %d(%d) tasks\n", myid, status10r.MPI_SOURCE, incount, inbuf[1]);
 //					fflush(stdout);
 
-//					MPI_Recv(recvlist, 6*incount, Strtype, IncreaseProcId[Inj], 11, MPI_COMM_WORLD, &status11r);
 					MPI_Recv(bufdatarecv, 1, sndrcvdata , IncreaseProcId[Inj], 11, MPI_COMM_WORLD, &status11r);
 
 					MPI_Unpack(bufdatarecv, incount*sizeof(MyStr)+sizeof(int), &position, &seriestmp11, 1, MPI_INT, MPI_COMM_WORLD);   
@@ -625,13 +596,10 @@ void Integration(double (*function3D)(double, double, double, double*),
 						recvlist =(MyStr*)malloc(incount*sizeof(MyStr));
 						MPI_Unpack(bufdatarecv, incount*sizeof(MyStr)+sizeof(int), &position, recvlist, incount, Strtype, MPI_COMM_WORLD);   
 
-//						flag11r = 1;
 						memcpy(&list[1], recvlist, incount*sizeof(MyStr));										//
 						signallIncom[Inj] = 1;
 						count = incount;
-				/// изменить порядковый номер запрашиваемого процесса
-				/// е. в предыдущем запросе было меньше заданий, пор.номер возрастает
-				/// иначе пор.номер спадает
+						//change the order of co-processors list	
 						if ((Inj <= (InN)) && (Inj > 0)) {
 							if (incount >= INcountcompare[Inprev] ) {
 								Inprev = Inj;
@@ -661,21 +629,14 @@ void Integration(double (*function3D)(double, double, double, double*),
 				}
 				INcountcompare[Inprev] = incount;	
 			} 
-//			else {
-//				flag11r = 1;
-//			}
         }
-        // проверить всех ли опросил
-        // е. да, то отослать сообщения о своем выходе и выйти
-        // иначе продолжить опрашивать
-///
-/// е. все счетчики процессов обнулены, то это является достаточным условием 
-/// для выхода из программы
-/// СДЕЛАТЬ и ВЫПОЛНИТЬ рассылку сообщения о своем выходе
-/// ОТМЕНИТЬ запросы на дополнительные задания 
-/// и проверку на выход  других процессов
-///
-        if (!flagExitProc) {
+
+		// If all co-processors don't have tasks
+		// It's a enough condition to leave procedure
+
+		// send message: 'I leave procedure'
+
+		if (!flagExitProc) {
             signexitIncom = 0;
 			for (k = 1; k <= InN; k++) {		//
                 signexitIncom += signallIncom[k];			//
@@ -684,11 +645,11 @@ void Integration(double (*function3D)(double, double, double, double*),
                 for (i = 1; i <= InNTemp; i++) {
 					byebuf = series; 
 					MPI_Send(&byebuf, 1, MPI_INT, IncreaseProcId[i], 13, MPI_COMM_WORLD);
+					fprintf(stdout, "Proc %d send to proc %d msg: \"I leave you\"\n", myid, IncreaseProcId[i]);
 					MPI_Cancel(&req13r[i]);
 				}
-				//fprintf(stdout, "proc %d leaving caused by no more tasks\n", myid);fflush(stdout);
+				fprintf(stdout, "proc %d leaving caused by no more tasks\n", myid);fflush(stdout);
 
-                // сделать вставку на отмену сделланных запросов(на новые задания, на проверку действующих процессов)
 				if (!flag12r) {
                     MPI_Cancel(&req12r);
 				}
