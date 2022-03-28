@@ -80,13 +80,13 @@ int main (int argc, char **argv) {
 	// locate memory on log message
 	msg = (char**)malloc(100 * sizeof(char));
 
-	/*Timing of performing*/
-	struct tm * tmptime;
+	///*Timing of performing*/
+	//struct tm * tmptime;
 
 	/*MPI rutine initialization*/
 	int MPIErrorCode = 1;
 
-	// MPI initialization
+	/*MPI initialization*/
 	MPI_Init(&argc, &argv); 
 
 	// test MPI initialization
@@ -133,10 +133,8 @@ int main (int argc, char **argv) {
 	if (processorRank == 0) {
 		fprintf(stdout, "Welcome to our program!\n");
 		fprintf(stdout, "Calculation is performed on %d processors within %s .\n", processorSetSize, commName);
+		fflush(stdout);
 	}
-
-	
-//	int series = 1;			// index of program's start
 
 	// open and read file
 		// create pointers
@@ -152,6 +150,7 @@ int main (int argc, char **argv) {
 	//locate memory on parameter values array
 	setParmtrsValue = (double*)malloc(PARAMETERS_COUNT * sizeof(double));
 
+	// Read parameters from file
 	if (processorRank == 0) {
 		FILE* InFile = NULL;
 		if (fopen_s(&InFile, IN_FILEPATH, "r")) { // true is error of opening
@@ -161,41 +160,33 @@ int main (int argc, char **argv) {
 			exit(EXIT_FAILURE);
 		}
 		parseFile(&InFile, PARAMETERS_COUNT, &setParmtrsName, &setParmtrsValue, &msg);
-		for (int i = 0; i < PARAMETERS_COUNT; i++) {
-			fprintf(stdout, "%s\t", setParmtrsName[i]);
-		}
-		fprintf(stdout, " \n");
-		for (int i = 0; i < PARAMETERS_COUNT; i++) {
-			fprintf(stdout, "%.2e", setParmtrsValue[i]);
-		}
-		fprintf(stdout, " \n");
+		//for (int i = 0; i < PARAMETERS_COUNT; i++) {
+		//	fprintf(stdout, "%s\t", setParmtrsName[i]);
+		//}
+		//fprintf(stdout, " \n");
+		//for (int i = 0; i < PARAMETERS_COUNT; i++) {
+		//	//fprintf(stdout, "%.2e", setParmtrsValue[i]);
+		//}
+		//fprintf(stdout, " \n");
 	}
 
+	//share parameters value with coprocessors
+	if (processorRank == 0)
+	{
+		for (int i = 1; i < processorSetSize; i++) {
+			MPI_Send(setParmtrsValue, 10, MPI_DOUBLE, i, 123, comm);
+		}
+	}
 
-	////create new MPI type to send and receive parametrs
-	//MPI_Datatype sndrcvparmtrs;					//name of new MPI data type
-	//MPI_Datatype oldtypes[1 + 1];	//array of old parameters will be included in the new MPI data type
-	//MPI_Aint offsets[1+1];		//array of blocks in the new MPI data type
-	//int blklens[1 + 1];				//array of element counts in each block
-	//
-	////old data types
-	//oldtypes[0] = MPI_INT;									
-	//oldtypes[1] = MPI_DOUBLE;
+	if (processorRank != 0)
+	{
+		MPI_Status status;
+		MPI_Recv(setParmtrsValue, 10, MPI_DOUBLE, 0, 123, comm, &status);
+		//for (int i = 0; i < PARAMETERS_COUNT; i++) {
+		//	printf("par[%d]=%f\n", i, setParmtrsValue[i]);
+		//}
 
-	////number of elements in each block					
-	//blklens[0] = 1;														
-	//blklens[1] = PARAMETERS_COUNT;
-	//
-	////offset of each block calculated in bytes					
-	//offsets[0] = 0;														
-	//MPI_Type_size(MPI_INT, &offsets[1]);						
-
-	////creating new MPI structure
-	//MPI_Type_create_struct(1 + 1, blklens, offsets, oldtypes, &sndrcvparmtrs);		
-
-	//// commiting new MPI data type
-	//MPI_Type_commit(&sndrcvparmtrs);										
-
+	}
 
 	// run integration procedure
 
@@ -208,42 +199,13 @@ int main (int argc, char **argv) {
 	// 
 
 
-	//if (processorRank == 0) {
-	//	FILE* inputFile;
-	//}
-	
-	//{
-	//	unionvectorV[0] = atof(argv[2]); //nVx
-	//	unionvectorV[1] = atof(argv[3]); //nVy
-	//	unionvectorV[2] = atof(argv[4]); //nVz
-
-	//	if(velocityDefine(unionvectorV, atof(argv[5]), vectorV, msg)) { // error
-	//		fprintf(stdout,"%s", msg); 
-	//		return 1;
-	//	}
-
-	//	set_parmtrs[0] = vectorV[0];	// Vx
-	//	set_parmtrs[1] = vectorV[1];	// Vy
-	//	set_parmtrs[2] = vectorV[2];	// Vz
-	//	set_parmtrs[3] = atof(argv[5]);	// |V|
-	//	set_parmtrs[4] = atof(argv[6]);	// Te_per
-	//	set_parmtrs[5] = atof(argv[7]);	// Te_par
-
-	//// !!!!не забути підключити ці параметри до розрахунків у наступних файлах!!!!
-	//	set_parmtrs[6] = delta(set_parmtrs[4]);	// Delta
-	//	set_parmtrs[7] = tau_perpendicular();	
-	//	set_parmtrs[8] = tau_parallel(atof(argv[7]), atof(argv[6])); //(Te_par, Te_per)
-	//
-	//}
-
-
 	//////////////////////////////////////////////////////////////////
 	// Call intagration function
 	//////////////////////////////////////////////////////////////////
 	//fprintf(stdout, "Wellcome to integation\n");
 	double result = 0.;		// result of calculation
 
-		//PreIntegration(rank, size, series, set_parmtrs, &result);
+		PreIntegration(processorRank, processorSetSize, 1, setParmtrsValue, &result);
 		//////////////////////////////////////////////////////////////////
 //
 //
@@ -319,7 +281,8 @@ int main (int argc, char **argv) {
 //	fprintf(stdout, "proc %d finalize\n", rank);fflush(stdout);
 
 	free(msg);
-
+	//free(setParmtrsName);
+	free(setParmtrsValue);
 	//MPI-work are stoped
 	//noone mpi_procedure cannot be initialized after
 	MPI_Finalize();

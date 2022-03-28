@@ -418,6 +418,8 @@ void Integration(double (*function3D)(double, double, double, double*),
 		///////////////////////////////////////////////////////////////////
 	//break;	
 	while(!count) {
+		KEY_exit = 0;
+		break;
 		int inbuf[2];
 		int outbuf[2]; 
 		int byebuf;

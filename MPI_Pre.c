@@ -1,20 +1,17 @@
-// Интервалы интегрирования разбиваются на части,	//
-// соответственно к количеству рабочих процессов	//
-// После вызывает интегрирующий алгоритм,			//
-// передавая ему как параметр масив интервалов		//
-//////////////////////////////////////////////////////
+п»ї// РРЅС‚РµСЂРІР°Р»С‹ РёРЅС‚РµРіСЂРёСЂРѕРІР°РЅРёСЏ СЂР°Р·Р±РёРІР°СЋС‚СЃСЏ РЅР° С‡Р°СЃС‚Рё,	//
+// СЃРѕРѕС‚РІРµС‚СЃС‚РІРµРЅРЅРѕ Рє РєРѕР»РёС‡РµСЃС‚РІСѓ СЂР°Р±РѕС‡РёС… РїСЂРѕС†РµСЃСЃРѕРІ	//
+// РџРѕСЃР»Рµ РІС‹Р·С‹РІР°РµС‚ РёРЅС‚РµРіСЂРёСЂСѓСЋС‰РёР№ Р°Р»РіРѕСЂРёС‚Рј,			//
+// РїРµСЂРµРґР°РІР°СЏ РµРјСѓ РєР°Рє РїР°СЂР°РјРµС‚СЂ РјР°СЃРёРІ РёРЅС‚РµСЂРІР°Р»РѕРІ
 
-/* Определяет приделы интегрирования*/
+/* define boundaries*/
 #include "Boundaries.h"  
-/* Метод преобразования подинтегральной функции Double Exponenta*/
+/* Double Exponenta*/
 /* L.Ye NUMERICAL QUADRATURE: THEORY AND COMPUTATION*/
 #include "DoubleExponenta.h" 
-/*Содержит интегрируемую функцию*/
+/*Function of integration*/
 #include "Function.h"
-/*Содержит некоторые необходимые параметры задачи,*/
-/*значение которых опредеялет значение интеграла */
+
 #include "InputData.h"
-/*Интегрирующий алгоритм*/
 #include "integration_procedure.h"
 #include <stdio.h>
 #include <stdlib.h> //malloc
@@ -31,12 +28,11 @@ void PreIntegration (int rank, int size, int series, double *set_parmtrs, double
 	double intervalX, intervalY, intervalZ;
 	double statisticTime = 0.0, totalstatisticTime = 0.0;
 	
-	//double parameter[4];	//массив, содержащий некоторые параметры интегрирования
-	double bounds[6];		//массив, содержащий пределы интегирования
+	double bounds[6];		
 
-	MyStr *list;		//весь список интервалов интегрирования
-	MyStr *sendlist;	//список, отсылаемых интервалов
-	
+	MyStr *list;			
+	MyStr *sendlist;	
+
 	int *step;
 	int tempstep = 0;
 	int totalstep = 0;
@@ -50,37 +46,37 @@ void PreIntegration (int rank, int size, int series, double *set_parmtrs, double
 	MPI_Request reqSumm[1] = {MPI_REQUEST_NULL};
 
 	////////////////////////////
-	//..Создаем новый тип MPI...
-	// Название типа
+	//..Г‘Г®Г§Г¤Г ГҐГ¬ Г­Г®ГўГ»Г© ГІГЁГЇ MPI...
+	// ГЌГ Г§ГўГ Г­ГЁГҐ ГІГЁГЇГ 
 	MPI_Datatype strtype;
-	// Данные с идентификационным номером id
+	// Г„Г Г­Г­Г»ГҐ Г± ГЁГ¤ГҐГ­ГІГЁГґГЁГЄГ Г¶ГЁГ®Г­Г­Г»Г¬ Г­Г®Г¬ГҐГ°Г®Г¬ id
 	MPI_Datatype IdData;
-	// содержание	
+	// Г±Г®Г¤ГҐГ°Г¦Г Г­ГЁГҐ	
 	MPI_Datatype type[6] = {MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE};
 	MPI_Datatype IdType[7] = {MPI_UNSIGNED_LONG, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE};
 
-	// количество элементов
+	// ГЄГ®Г«ГЁГ·ГҐГ±ГІГўГ® ГЅГ«ГҐГ¬ГҐГ­ГІГ®Гў
 	int blocklen[6] = {1, 1, 1, 1, 1, 1};
 	int IdBlocklen[7] = {1, 1, 1, 1, 1, 1, 1};
-	// расстояние между элементами (в памяти)
+	// Г°Г Г±Г±ГІГ®ГїГ­ГЁГҐ Г¬ГҐГ¦Г¤Гі ГЅГ«ГҐГ¬ГҐГ­ГІГ Г¬ГЁ (Гў ГЇГ Г¬ГїГІГЁ)
 	MPI_Aint disp[6] = {0, 0, 0, 0, 0, 0};
 	MPI_Aint IdDisp[7] = {0, 0, 0, 0, 0, 0, 0};
-	// конструируем тип
+	// ГЄГ®Г­Г±ГІГ°ГіГЁГ°ГіГҐГ¬ ГІГЁГЇ
 	MPI_Type_create_struct(6, blocklen, disp, type, &strtype);
 	MPI_Type_create_struct(7, IdBlocklen, IdDisp, IdType, &IdData);
-	// реестрация типа
+	// Г°ГҐГҐГ±ГІГ°Г Г¶ГЁГї ГІГЁГЇГ 
 	MPI_Type_commit(&strtype);
 	MPI_Type_commit(&IdData);
 	
-	// засекаем время работы программы
+	// Г§Г Г±ГҐГЄГ ГҐГ¬ ГўГ°ГҐГ¬Гї Г°Г ГЎГ®ГІГ» ГЇГ°Г®ГЈГ°Г Г¬Г¬Г»
 	startwtime = MPI_Wtime();	
 
-	list = (MyStr *)malloc(size*size*size*sizeof(MyStr));//список для интервалов интегрирования
-	sendlist = (MyStr *)malloc(size*size*sizeof(MyStr)); // список для отсылки заданий (интервалов интегрирования)
+	list = (MyStr *)malloc(size*size*size*sizeof(MyStr));//Г±ГЇГЁГ±Г®ГЄ Г¤Г«Гї ГЁГ­ГІГҐГ°ГўГ Г«Г®Гў ГЁГ­ГІГҐГЈГ°ГЁГ°Г®ГўГ Г­ГЁГї
+	sendlist = (MyStr *)malloc(size*size*sizeof(MyStr)); // Г±ГЇГЁГ±Г®ГЄ Г¤Г«Гї Г®ГІГ±Г»Г«ГЄГЁ Г§Г Г¤Г Г­ГЁГ© (ГЁГ­ГІГҐГ°ГўГ Г«Г®Гў ГЁГ­ГІГҐГЈГ°ГЁГ°Г®ГўГ Г­ГЁГї)
 	
-	step = (int *)malloc(size*sizeof(int));			// массив счетчиков
-														//, указывающих на количество итераций, 
-														// проведенных каждым процессом
+	step = (int *)malloc(size*sizeof(int));			// Г¬Г Г±Г±ГЁГў Г±Г·ГҐГІГ·ГЁГЄГ®Гў
+														//, ГіГЄГ Г§Г»ГўГ ГѕГ№ГЁГµ Г­Г  ГЄГ®Г«ГЁГ·ГҐГ±ГІГўГ® ГЁГІГҐГ°Г Г¶ГЁГ©, 
+														// ГЇГ°Г®ГўГҐГ¤ГҐГ­Г­Г»Гµ ГЄГ Г¦Г¤Г»Г¬ ГЇГ°Г®Г¶ГҐГ±Г±Г®Г¬
 	for (i = 0; i <size; i++) {
 		step[i] = 0;
 	}
@@ -94,7 +90,7 @@ void PreIntegration (int rank, int size, int series, double *set_parmtrs, double
 
 	count = 0;
 	if (rank == 0) {
-		// преобразование координат по алгоритму двойной экспоненты
+		// ГЇГ°ГҐГ®ГЎГ°Г Г§Г®ГўГ Г­ГЁГҐ ГЄГ®Г®Г°Г¤ГЁГ­Г ГІ ГЇГ® Г Г«ГЈГ®Г°ГЁГІГ¬Гі Г¤ГўГ®Г©Г­Г®Г© ГЅГЄГ±ГЇГ®Г­ГҐГ­ГІГ»
 		list[count].lowX = - DEboundary();   
 		list[count].upX = -list[count].lowX; 
 		list[count].lowY = list[count].lowX;
@@ -108,8 +104,8 @@ void PreIntegration (int rank, int size, int series, double *set_parmtrs, double
 		lowY = list[count].lowY ;
 		lowZ = list[count].lowZ ;
 
-		// Разбиение интервала интегрирования на более мелкие части
-		// шаги разбиения
+		// ГђГ Г§ГЎГЁГҐГ­ГЁГҐ ГЁГ­ГІГҐГ°ГўГ Г«Г  ГЁГ­ГІГҐГЈГ°ГЁГ°Г®ГўГ Г­ГЁГї Г­Г  ГЎГ®Г«ГҐГҐ Г¬ГҐГ«ГЄГЁГҐ Г·Г Г±ГІГЁ
+		// ГёГ ГЈГЁ Г°Г Г§ГЎГЁГҐГ­ГЁГї
 		intervalX = fabs(list[count].upX - list[count].lowX) / size ;
 		intervalY = fabs(list[count].upY - list[count].lowY) / size ;
 		intervalZ = fabs(list[count].upZ - list[count].lowZ) / size ;
@@ -126,29 +122,29 @@ void PreIntegration (int rank, int size, int series, double *set_parmtrs, double
 				}
 			}
 		}
-		count = count/size; // количесто элементов для отправки
+		count = count/size; // ГЄГ®Г«ГЁГ·ГҐГ±ГІГ® ГЅГ«ГҐГ¬ГҐГ­ГІГ®Гў Г¤Г«Гї Г®ГІГЇГ°Г ГўГЄГЁ
 		// #WARNING
-		// Рассылку можно заменить просто выборочным цыклом,
-		// когда из цыкла каждый процесс выбирает эллемент 
-		// через определенный шаг
+		// ГђГ Г±Г±Г»Г«ГЄГі Г¬Г®Г¦Г­Г® Г§Г Г¬ГҐГ­ГЁГІГј ГЇГ°Г®Г±ГІГ® ГўГ»ГЎГ®Г°Г®Г·Г­Г»Г¬ Г¶Г»ГЄГ«Г®Г¬,
+		// ГЄГ®ГЈГ¤Г  ГЁГ§ Г¶Г»ГЄГ«Г  ГЄГ Г¦Г¤Г»Г© ГЇГ°Г®Г¶ГҐГ±Г± ГўГ»ГЎГЁГ°Г ГҐГІ ГЅГ«Г«ГҐГ¬ГҐГ­ГІ 
+		// Г·ГҐГ°ГҐГ§ Г®ГЇГ°ГҐГ¤ГҐГ«ГҐГ­Г­Г»Г© ГёГ ГЈ
 		for (i = 1; i < size; i++) {
-			// Отсылаем каждому процессу задания:
-			// отсылка количества заданий
+			// ГЋГІГ±Г»Г«Г ГҐГ¬ ГЄГ Г¦Г¤Г®Г¬Гі ГЇГ°Г®Г¶ГҐГ±Г±Гі Г§Г Г¤Г Г­ГЁГї:
+			// Г®ГІГ±Г»Г«ГЄГ  ГЄГ®Г«ГЁГ·ГҐГ±ГІГўГ  Г§Г Г¤Г Г­ГЁГ©
 			MPI_Send(&count, 1, MPI_INT, i, 1, MPI_COMM_WORLD);
-			// отсылка заданий count шт.
+			// Г®ГІГ±Г»Г«ГЄГ  Г§Г Г¤Г Г­ГЁГ© count ГёГІ.
 			memcpy(sendlist, &list[i*(count)], count*sizeof(MyStr));
 			MPI_Send(sendlist, 6*count, strtype, i, 0, MPI_COMM_WORLD);
 		}
 	} else {
-		// Получение заданий для работы:
-		// получение количества присылаемых заданий
+		// ГЏГ®Г«ГіГ·ГҐГ­ГЁГҐ Г§Г Г¤Г Г­ГЁГ© Г¤Г«Гї Г°Г ГЎГ®ГІГ»:
+		// ГЇГ®Г«ГіГ·ГҐГ­ГЁГҐ ГЄГ®Г«ГЁГ·ГҐГ±ГІГўГ  ГЇГ°ГЁГ±Г»Г«Г ГҐГ¬Г»Гµ Г§Г Г¤Г Г­ГЁГ©
 		MPI_Recv(&count, 1, MPI_INT, 0, 1, MPI_COMM_WORLD, &status);
-		// получение заданий count шт.
+		// ГЇГ®Г«ГіГ·ГҐГ­ГЁГҐ Г§Г Г¤Г Г­ГЁГ© count ГёГІ.
 		//MPI_Recv(list, 4*count, strtype, 0, 0, MPI_COMM_WORLD, &status);
 		MPI_Recv(list, 6*count, strtype, 0, 0, MPI_COMM_WORLD, &status);
 		// #WARNING 
-		// Получющий список может быть и меньшим, 
-		// размера sendlist
+		// ГЏГ®Г«ГіГ·ГѕГ№ГЁГ© Г±ГЇГЁГ±Г®ГЄ Г¬Г®Г¦ГҐГІ ГЎГ»ГІГј ГЁ Г¬ГҐГ­ГјГёГЁГ¬, 
+		// Г°Г Г§Г¬ГҐГ°Г  sendlist
 	}
 	bounds[0] = LOWX;
 	bounds[1] = UPX;
@@ -162,19 +158,22 @@ void PreIntegration (int rank, int size, int series, double *set_parmtrs, double
 	//	fprintf(stdout, "bound %d = %g\n", i, bounds[i]); fflush(stdout);
 	//	}
 	//}
-
-///%%%%%%%%%%%%%%%%%%%%
+	fprintf(stdout, "Proc %d(%d) start!\n", rank, size); fflush(stdout);
+	///%%%%%%%%%%%%%%%%%%%%
 	/////////////////////////////////////////////////////////////
 	//Integration(ELiMA, series, set_parmtrs, rank, size, count, list, &subSumm, &tempstep, bounds);
-	fprintf(stdout, "Proc %d(%d) start!\n", rank, size);
+	//fprintf(stdout, "Proc %d(%d) start!\n", rank, size);
+//	if (rank == 0) {
+		//fprintf(stdout, "proc %d(%d): series %d, count %d, \n par[2] = %f, bounds[0] = %f\n", rank, size, series, count, set_parmtrs[2], bounds[0]);
+//	}
 	Integration(ELIA, series, set_parmtrs, rank, size, count, list, &subSumm, &tempstep, bounds);
-///%%%%%%%%%%%%%%%%%%%%	
+	///%%%%%%%%%%%%%%%%%%%%	
 	//Integration(ELI, series, set_parmtrs, rank, size, count, list, &subSumm, &tempstep, bounds);
 	//Integration(function3D, series, set_parmtrs, rank, size, count, list, &subSumm, &tempstep, bounds);
 
-	/////////////////////////////////////////////////////////////
-	//Просуммируем промежуточные значения суммы//
-	// Сбор результатов от каждого процесса
+	///////////////////////////////////////////////////////////
+	//ГЏГ°Г®Г±ГіГ¬Г¬ГЁГ°ГіГҐГ¬ ГЇГ°Г®Г¬ГҐГ¦ГіГІГ®Г·Г­Г»ГҐ Г§Г­Г Г·ГҐГ­ГЁГї Г±ГіГ¬Г¬Г»//
+	// Г‘ГЎГ®Г° Г°ГҐГ§ГіГ«ГјГІГ ГІГ®Гў Г®ГІ ГЄГ Г¦Г¤Г®ГЈГ® ГЇГ°Г®Г¶ГҐГ±Г±Г 
 	if (rank != 0) {
 		MPI_Send(&tempstep, 1, MPI_INT, 0, 2, MPI_COMM_WORLD);
 	} else {
@@ -208,7 +207,7 @@ void PreIntegration (int rank, int size, int series, double *set_parmtrs, double
 	}
 
 
-	// освобождение памяти
+	// Г®Г±ГўГ®ГЎГ®Г¦Г¤ГҐГ­ГЁГҐ ГЇГ Г¬ГїГІГЁ
 	free(step);
 	free(list);
 	free(sendlist);
