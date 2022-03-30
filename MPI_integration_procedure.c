@@ -228,13 +228,34 @@ void Integration(double (*function3D)(double, double, double, double*),
 			int intbuf[2];
 			MPI_Recv(intbuf, 1, sndrcvcount, IncreaseProcId[i], 10, MPI_COMM_WORLD, &status10s);			
 		}
+		MPI_Iprobe(IncreaseProcId[i], 13, MPI_COMM_WORLD, &flag13r[i], &status10s);
+		if (flag13r[i]) {
+			int byebuf = 0;
+			MPI_Recv(&byebuf, 1, MPI_INT, IncreaseProcId[i], 13, MPI_COMM_WORLD, &req13r[i]);
+			flag13r[i] = 0;
+		}
+		if (flag13r[i]) {
+			int byebuf = 0;
+			MPI_Recv(&byebuf, 1, MPI_INT, IncreaseProcId[i], 13, MPI_COMM_WORLD, &req13r[i]);
+			flag13r[i] = 0;
+		}
+		if (flag13r[i]) {
+			int byebuf = 0;
+			MPI_Recv(&byebuf, 1, MPI_INT, IncreaseProcId[i], 13, MPI_COMM_WORLD, &req13r[i]);
+			flag13r[i] = 0;
+		}
+		if (flag13r[i]) {
+			int byebuf = 0;
+			MPI_Recv(&byebuf, 1, MPI_INT, IncreaseProcId[i], 13, MPI_COMM_WORLD, &req13r[i]);
+			flag13r[i] = 0;
+		}
 	}
 
 	//	fprintf(stdout, " myid %d list[0].lowX = %f, list[0].upX = %f \n", myid, listINcom[0].lowX, listINcom[0].upX); fflush(stdout);
 	//	fprintf(stdout, " myid %d list[0].upX = %f, list[0].upX = %f \n", myid, UPX, UPY); fflush(stdout);
 
 	while (KEY_exit > 0) {
-		int seriestmp12;
+		int seriestmp12[1];
 		while(count) {
 			// count of iterations
 			*step+=1;
@@ -336,21 +357,22 @@ void Integration(double (*function3D)(double, double, double, double*),
 				*subSumm += subCells;
 				count -= 1;
 			}
-			if (0) {
-			//if (count >= 5) {
+			//if (0) {
+			if (count >= 5) {
 				if (flag12r) {
-					MPI_Irecv(&seriestmp12, 1, MPI_INT, MPI_ANY_SOURCE, 12, MPI_COMM_WORLD, &req12r);
+					MPI_Irecv(seriestmp12, 1, MPI_INT, MPI_ANY_SOURCE, 12, MPI_COMM_WORLD, &req12r);
 				}
 				MPI_Test(&req12r, &flag12r, &status12r);
 				if (flag12r) {
 					fprintf(stdout, "proc %d recv from proc %d ask for tasks with series %d\n", myid, status12r.MPI_SOURCE, series);
 					fflush(stdout);
-					if (seriestmp12 == series) {
+					if (seriestmp12[0] == series) {
 						MPI_Datatype sndrcvdata;
 						double *bufdatasend;
 						int position = 0;
 						int intbuf[2];
 						int mpiintsize, strtypesize;
+						int seriesBuf[1];
 						MyStr *sendlist;
 
 						countsend = 0;
@@ -398,11 +420,23 @@ void Integration(double (*function3D)(double, double, double, double*),
 						MPI_Type_size(MPI_INT, &mpiintsize);
 						MPI_Type_size(Strtype, &strtypesize);
 						bufdatasend = (double*)malloc(countsend*strtypesize+mpiintsize);
+						fprintf(stdout, "buffer size is %d - bufdatasend size is %d\n", countsend* strtypesize + mpiintsize,sizeof(bufdatasend)); fflush(stdout);
 						position = 0;
-						MPI_Pack(&intbuf[0], 1, MPI_INT, bufdatasend, countsend*strtypesize+mpiintsize, &position, MPI_COMM_WORLD);
+
+						fprintf(stdout, "11S>proc %d START pack COUNT tasks to proc %d %d(%d) tasks\n", myid, status12r.MPI_SOURCE, countsend, intbuf[1]);
+						fflush(stdout);
+
+
+						//MPI_Pack(&intbuf[0], 1, MPI_INT, bufdatasend, countsend*strtypesize+mpiintsize, &position, MPI_COMM_WORLD);
+
+						fprintf(stdout, "10S>proc %d pack START TASKS to proc %d %d(%d) tasks\n", myid, status12r.MPI_SOURCE, countsend, intbuf[1]);
+						fflush(stdout);
+						seriesBuf[0] = series;
+						MPI_Pack(seriesBuf, 1, MPI_INT, bufdatasend, countsend * strtypesize + mpiintsize, &position, MPI_COMM_WORLD);
 						MPI_Pack(sendlist, countsend, Strtype, bufdatasend, countsend*strtypesize+mpiintsize, &position, MPI_COMM_WORLD);
 
-						fprintf(stdout, "proc %d pack tasks to proc %d %d(%d) tasks\n", myid, status12r.MPI_SOURCE, countsend, intbuf[1]);
+						fprintf(stdout, "10S>proc %d pack FINISH TASKS to proc %d %d(%d) tasks. Size of data is %d\n", 
+							myid, status12r.MPI_SOURCE, countsend, intbuf[1], sizeof(countsend*strtypesize+mpiintsize));
 						fflush(stdout);
 
 						MPI_Send(bufdatasend, 1, sndrcvdata, status12r.MPI_SOURCE, 11, MPI_COMM_WORLD);
@@ -420,13 +454,14 @@ void Integration(double (*function3D)(double, double, double, double*),
 		//	if(count == 0) 	// е. у процесса закончились задания	///
 		///////////////////////////////////////////////////////////////////
 	//break;
-		fprintf(stdout, "proc %d: no tasks\n", myid); fflush(stdout);
+		fprintf(stdout, "proc %d: no tasks. count of coprocessors is %d\n", myid, InNTemp); fflush(stdout);
 	while(!count) {
 		//KEY_exit = 0;
 		//break;
 		int inbuf[2];
 		int outbuf[2]; 
-		int byebuf=0;
+		//int byebuf=1;
+		int byebuf[1];
 		int seriestmp10;
 ///
 ///получить сообщения о прекращении работы других процессов
@@ -434,9 +469,12 @@ void Integration(double (*function3D)(double, double, double, double*),
 		for(i = 1; i <= InNTemp; i++) {
 			if(!flagexitIn[i]){ //flag on request: is coprocessors leave procedure?
 				// nonblock request on receiving leaving message
-				MPI_Irecv(&byebuf, 1, MPI_INT, IncreaseProcId[i], 13, MPI_COMM_WORLD, &req13r[i]);
+				//MPI_Irecv(&byebuf, 1, MPI_INT, IncreaseProcId[i], 13, MPI_COMM_WORLD, &req13r[i]);
+				MPI_Irecv(byebuf, 1, MPI_INT, IncreaseProcId[i], 13, MPI_COMM_WORLD, &req13r[i]);
 				// no requests more
 				flagexitIn[i] = 1;
+				//fprintf(stdout, "13>proc %d check leaved co-processors %d \n", myid, IncreaseProcId[i]); fflush(stdout);
+
 			}	
 			if(!flag13r[i]) { //TEST: Have leaving message already been received?
 				MPI_Test(&req13r[i], &flag13r[i], &status13r[i]);
@@ -445,11 +483,13 @@ void Integration(double (*function3D)(double, double, double, double*),
 			if (flag13r[i]) { // Leaving message have already been received
 				//test is series correct (Is this message no artifact?);
 				int seriestmp13;
-				seriestmp13 = byebuf;
+				seriestmp13 = byebuf[0];
 				if (seriestmp13 == series) {
-					fprintf(stdout, "proc %d know proc %d has left program\n", myid, IncreaseProcId[i]);
-					fflush(stdout);
+					//fprintf(stdout, "proc %d know proc %d has left program\n", myid, IncreaseProcId[i]);
+					//fflush(stdout);
+					//decrease count of co-processors
 					InNTemp --;
+					//fprintf(stdout, "13R>proc %d knows that proc %d (%d) LEAVE procedure\n", myid, IncreaseProcId[i], InNTemp); fflush(stdout);
 					// cancel request on count of additional tasks
 					if (Inj == i) {
 						flag11r = 1;
@@ -472,9 +512,9 @@ void Integration(double (*function3D)(double, double, double, double*),
 					}
 				} else { //series is  uncorrect: This message is artifact.;
 					// reassign flag value (ready for monitoring on leaving message)
+					//fprintf(stdout, "13RW>proc %d recieve from proc %d msg with WRONG SERIES %d (%d) \n", myid, IncreaseProcId[i], seriestmp13,series); fflush(stdout);
 					flagexitIn[i] = 0;
 					flag13r[i]=0;
-//					req13r[i] = 0;
 				}
 			}
         }
@@ -498,13 +538,14 @@ void Integration(double (*function3D)(double, double, double, double*),
 		
 		// ASK additional tasks
 		if (flag11r) {
-			int tmp = series;
-			MPI_Send(&tmp, 1, MPI_INT, IncreaseProcId[Inj], 12, MPI_COMM_WORLD);
+			int tmp[1];
+			tmp[0] = series;
+			MPI_Send(tmp, 1, MPI_INT, IncreaseProcId[Inj], 12, MPI_COMM_WORLD);
 		}
 
 		// TEST: Do we have an ask on additional rasks
         if (flag12r) {
-            MPI_Irecv(&seriestmp12, 1, MPI_INT, MPI_ANY_SOURCE, 12, MPI_COMM_WORLD, &req12r);										////
+            MPI_Irecv(seriestmp12, 1, MPI_INT, MPI_ANY_SOURCE, 12, MPI_COMM_WORLD, &req12r);										////
             flag12r = 0;																									////
         }
         MPI_Test(&req12r, &flag12r, &status12r);
@@ -512,11 +553,13 @@ void Integration(double (*function3D)(double, double, double, double*),
 		if (flag12r) { //ask have been received
 			//fprintf(stdout, "proc %d has %d series and recv %d tmpser\n", myid, series, series);
 			//fflush(stdout);
-			if(series == seriestmp12) { 
+			if( seriestmp12[0] == series) {
 				outbuf[0] = series;
 				outbuf[1] = 0;
 				//send msg: 'no task'
 				MPI_Send(outbuf, 2, MPI_INT, status12r.MPI_SOURCE, 10, MPI_COMM_WORLD);
+				//fprintf(stdout, "10S>proc %d send I'M EMPY to proc %d\n", myid, status12r.MPI_SOURCE);
+				//fflush(stdout);
 				countsend = 0;
 				flag12r = 1;
 			} 
@@ -541,6 +584,8 @@ void Integration(double (*function3D)(double, double, double, double*),
 				//fflush(stdout);
 				//test is set of task empty?
 			   if (incount == 0) { 
+				   //fprintf(stdout, "10R>proc %d recv from proc %d msg: NO TASK \n", myid, status10r.MPI_SOURCE, incount);
+				   //fflush(stdout);
 					i = 0;
 					signallIncom[Inj] = 0; // sender does not have tasks
 					//ready to ask next co-processor
@@ -564,7 +609,7 @@ void Integration(double (*function3D)(double, double, double, double*),
 					//additional task is presented
 			   } else if (incount > 0) {
 					MPI_Datatype sndrcvdata;
-					int seriestmp11;
+					int seriestmp11[1];
 					int position = 0;
 					double *bufdatarecv;
 					//////////////////////////////////////////////////////////////////////
@@ -583,15 +628,22 @@ void Integration(double (*function3D)(double, double, double, double*),
 					MPI_Type_create_struct( 2, blklens, offsets, oldtypes, &sndrcvdata );		//
 						/*Реестрация новой структуры*/									//
 					MPI_Type_commit( &sndrcvdata );										//
+					//MPI_Type_size(MyStr, &)
 					//////////////////////////////////////////////////////////////////////
 					bufdatarecv = (double*)malloc(incount*sizeof(MyStr)+sizeof(int));
-//					fprintf(stdout, "proc %d recv from %d list of %d(%d) tasks\n", myid, status10r.MPI_SOURCE, incount, inbuf[1]);
-//					fflush(stdout);
+					
+					//bufdatarecv = (double*)malloc(incount * sizeof(MyStr) + sizeof(double));
+					fprintf(stdout, "10R>proc %d recv msg from %d: I send to you set with %d(%d) tasks. Size of Message is %d\n", 
+						myid, status10r.MPI_SOURCE, incount, inbuf[1], sizeof(bufdatarecv));
+					fflush(stdout);
 
 					MPI_Recv(bufdatarecv, 1, sndrcvdata , IncreaseProcId[Inj], 11, MPI_COMM_WORLD, &status11r);
 
-					MPI_Unpack(bufdatarecv, incount*sizeof(MyStr)+sizeof(int), &position, &seriestmp11, 1, MPI_INT, MPI_COMM_WORLD);   
-					if (seriestmp11 == series) {
+					fprintf(stdout, "10R> proc %d START UNPACK message from %d\n", myid, status10r.MPI_SOURCE);
+					fflush(stdout);
+
+					MPI_Unpack(bufdatarecv, incount*sizeof(MyStr)+ offsets[1], &position, seriestmp11, 1, MPI_INT, MPI_COMM_WORLD);
+					if (seriestmp11[0] == series) {
 						MyStr *recvlist;
 						recvlist =(MyStr*)malloc(incount*sizeof(MyStr));
 						MPI_Unpack(bufdatarecv, incount*sizeof(MyStr)+sizeof(int), &position, recvlist, incount, Strtype, MPI_COMM_WORLD);   
@@ -619,6 +671,9 @@ void Integration(double (*function3D)(double, double, double, double*),
 						}
 						free(recvlist);
 					}
+					fprintf(stdout, "10R> proc %d FINISH UNPACK message from %d\n", myid, status10r.MPI_SOURCE);
+					fflush(stdout);
+
 					MPI_Type_free(&sndrcvdata);
 					free(bufdatarecv);
 					break;
@@ -643,9 +698,11 @@ void Integration(double (*function3D)(double, double, double, double*),
             }
             if (!signexitIncom) {
                 for (i = 1; i <= InNTemp; i++) {
-					byebuf = series; 
-					MPI_Send(&byebuf, 1, MPI_INT, IncreaseProcId[i], 13, MPI_COMM_WORLD);
-					fprintf(stdout, "Proc %d send to proc %d msg: \"I leave you\"\n", myid, IncreaseProcId[i]);
+					//byebuf = series;
+					byebuf[0] = series;
+					//MPI_Send(&byebuf, 1, MPI_INT, IncreaseProcId[i], 13, MPI_COMM_WORLD);
+					MPI_Send(byebuf, 1, MPI_INT, IncreaseProcId[i], 13, MPI_COMM_WORLD);
+					fprintf(stdout, "Proc %d send to proc %d msg with series %d: \"I leave you\"\n", myid, IncreaseProcId[i], byebuf[0]);
 					MPI_Cancel(&req13r[i]);
 				}
 				fprintf(stdout, "proc %d leaving caused by no more tasks\n", myid);fflush(stdout);
