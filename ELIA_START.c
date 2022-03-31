@@ -63,8 +63,8 @@ int main( int argc, TCHAR *argv[] )
 	double magnFieldValue = 0.;
 	const int angleVelocity = 0;	// set(0, 30, 45, 60, 90)
 	const int angleMagnField = 0; // set(0, 30, 45, 60, 90)
-	double tempPerp = 0.001;
-	double tempParall = 0.001;
+	double tempPerp = 0.1;
+	double tempParall = 0.1;
 	char *msg;						// pattern for message of result of execution
 	int countParmtrs = 10;			// count of task parameters
 	double *arrayParmtrValue;		// array of task parameters values
