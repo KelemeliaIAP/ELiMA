@@ -59,12 +59,12 @@ int vectorDirection(const int angle, double *unionVector, char *msg[]);
 int main( int argc, TCHAR *argv[] )
 {
 	int i;
-	double velocityValue = 1.2;
-	double magnFieldValue = 0.;
+	double velocityValue = 1.2; //Vi/V_0(10^6 m/c)
+	double magnFieldValue = 1000.; //wh/wp
 	const int angleVelocity = 0;	// set(0, 30, 45, 60, 90)
 	const int angleMagnField = 0; // set(0, 30, 45, 60, 90)
-	double tempPerp = 0.1;
-	double tempParall = 0.1;
+	double tempPerp = 0.1; //eV
+	double tempParall = 0.00001; //eV
 	char *msg;						// pattern for message of result of execution
 	int countParmtrs = 10;			// count of task parameters
 	double *arrayParmtrValue;		// array of task parameters values

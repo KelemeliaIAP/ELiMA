@@ -84,5 +84,9 @@ double ELiMA(double gx, double gy, double gz, double* parmtr);
 
 double elimaH(double gx, double gy, double gz, double* parmtr);
 
+double averageTau(double tau_perp, double tau_parall) ;
 
+double tau_perp_norm(double tau_perp, double tau_parall);
+
+double tau_parallel_norm(double tau_perp, double tau_parall);
 #endif

@@ -3,8 +3,8 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h> //malloc
-#include <gsl/gsl_sf_bessel.h>
-#include <gsl/gsl_sf_exp.h>
+//#include <gsl/gsl_sf_bessel.h>
+//#include <gsl/gsl_sf_exp.h>
 //#include "Faddeeva.h"
 
 // ПРИНИМАЕТ: действительный аргумент, типа double
@@ -271,250 +271,256 @@ double ELIA(double gx, double gy, double gz, double* parmtr){
 	// диэлектрическая восприимчивость представлена в виде ряда
 	// по параметру a^2 = q_t^2 * Delta/h 
 
-//double ELiMA(double gx, double gy, double gz, double* parmtr){
-//		// it needs to obtaine this parameter for all new jobs 
-//	double h = 10000;	// parameter of magnetic field
-//	
-//	// a difference between Landau levels
-//	double s ; 
-//	double N = 4;
-//
-//	// components of the union velocity vector V = V_i/V_0
-//	double Sx = parmtr[0]; 
-//	double Sy = parmtr[1];
-//	double Sz = parmtr[2];
-//
-//	// value of the union velocity vector V = V_i/V_0
-//	double V = parmtr[3];
-//
-//	// a perpendicular and a parallel components of the temperature of the electron gas
-//	double tau_per = parmtr[7]; 
-//	double tau_par = parmtr[8]; 
-//	double tau;
-//	double W;		// dimmles frequency
-//	double beta;	// magnet argument of exponent
-//	double a2;		// parameter of Lambda-function, 
-//						// it is always used in form a^{2N}	
-//	double PreSusc;	// prefix before susseptibility
-//	double Delta = parmtr[6];		// parameter delta = hbar W_0 / 2m_eV_0^2 	
-//	double g;
-//	double ReKappa, ImKappa;
-//	double Xi1, Xi2;
-//
-////	double A_Khel = 1.;			// Polarization coefficient by Khelemelia (h=0)
-////	double A_Lark = -1.;			// Polarization coefficient by Larkin
-////	double A_Akhi = 2.;			// Polarization coefficient by Akhiezer
-////	double AB = 4/PI;				// Polarization coefficient by Khelemelia (h not= 0)
-//	double PreInt, PostInt;
-//	double  Up = 0, Up0;
-//	double Pi = 3.14159265;
-//	double TemperatureFactor;		// a temperature factor 1-exp(-2 w delta0/tau)
-////	double theta1H, theta2H;
-//	double argBess, preBess;
-//	double ImMagnetPart = 0.;
-//	double ImMagnetPartTilde = 0.;
-//	double ReMagnetPart = 0.;
-//	double preScaledBess; 
-//	double exp_beta, exp_beta2;
-//	double ScaledBesselI_0, ScaledBesselI_1;
-//	double ScaledBesselInApprox;
-//	double ScaledBessel2 = 0, ScaledBessel1=0;
-//	double tmpRe0, tmpIm0, tmpImTilde0; 
-//	////////////////////////////////////////
-//	// General position
-//	g = sqrt(gx*gx + gy*gy + gz*gz);		// a dimless wave vector	
-//	W = (gx*Sx + gy*Sy + gz*Sz) - Delta*mM*g*g;		// a dimless frequency, determined as hw/hw_{0} = (E_{p} - E_{p-hk})/hw_{0}
-//	tau = tau_par/3. + 2.0*tau_per/3.0;		// temperature
-//
-//	if (h <= 0) { // procedure calculate magnetic case (h > 0)
-//		fprintf(stdout, "ERROR in function ELiMA. Parameter h cannot be ZERO or Less"); fflush(stdout);
-//		return 0;
-//	} 
-//
-//	if ((gz == 0) || ((gx == 0) && (gy == 0) && (gz == 0))) {  // to exclude numerical divergence
-//		return 0;
-//	} else {
-//		//PreSusc = 1/4.*sqrt(Pi)/sqrt(2*tau_par);  //a prefix of susceptibility. It's no variables of integration
-//		PreSusc = 1/4./Delta*sqrt(Pi)/sqrt(2*tau_par);  //a prefix of susceptibility. It's no variables of integration
-//		PreInt = PreSusc/Pi/Pi;	
-//
-//		Xi1 = (W +  Delta*gz*gz)/sqrt(2*tau_par)/gz; // variable 1 of exponenta;
-//		Xi2 = (W -  Delta*gz*gz)/sqrt(2*tau_par)/gz; // variable 2 of exponenta;
-//
-//		a2 = (gx*gx + gy*gy)*Delta/h;	// an argument of LambdaFunction
-//											// the parameter is inverse to the parameter of the magnetic field h = W_H/W_0
-//		beta = 2.*Delta*h/tau_per;		// an argument of exp
-//											// the argument is proportinal to the parameter of the magnetic field h = W_H/W_0  
-//		exp_beta2 = exp(-beta/2.);
-//		exp_beta = exp(-beta);
-//
-//		// for GS 
-//		//argBess = 2.*a2*(exp(-beta/2.)/(1.-exp(-beta)));
-//		argBess = 2.*a2*(exp_beta2/(1.-exp_beta));
-//		//preBess	= exp(-a2*(1.+exp(-beta))/(1.-exp(-beta)));	
-//
-//		//preScaledBess = exp(-a2*(1.-exp(-beta/2.))/(1.+exp(-beta/2.)));	
-//		preScaledBess	= exp(-a2*(1.-exp_beta2)/(1.+ exp_beta2));	
-//
-//		//Scaled modified bessel function exp(-|x|)*BesselI(n, x)
-//		ScaledBesselI_0 = gsl_sf_bessel_I0_scaled(argBess);
-//		ScaledBesselI_1 = gsl_sf_bessel_I1_scaled(argBess);
-//		
-//		for (s = 0; s<=N; s++) {
-//			double theta1Hp, theta1Hm, theta2Hp, theta2Hm;
-//			double XiSH;
-//			double RS;
-//			double BesselInApprox;
-//			XiSH = s*h/sqrt(2.*tau_par)/gz;
-//			theta1Hp = Xi1 + XiSH;
-//			theta1Hm = Xi1 - XiSH;
-//			theta2Hp = Xi2 + XiSH;
-//			theta2Hm = Xi2 - XiSH;
-//			if (s == 0) {
-//				ScaledBesselInApprox = ScaledBesselI_0;
-//				ScaledBessel2 = ScaledBesselInApprox;
-//			} else if (s == 1){
-//				ScaledBesselInApprox = ScaledBesselI_1;
-//				ScaledBessel1 = ScaledBesselInApprox;
-//			} 
-//			else{// if (s == 2) {
-//				if (fabs(argBess)  > 1e-16) {
-//					ScaledBesselInApprox = 	gsl_sf_bessel_In_scaled(s, argBess);
-//					//ScaledBesselInApprox = 	ScaledBessel2 -2*(s-1)/(argBess)*ScaledBessel1;
-//				} else {
-//					ScaledBesselInApprox = 0;
-//				}	
-//				ScaledBessel2=ScaledBessel1;
-//				ScaledBessel1 = ScaledBesselInApprox;
-//			}
-///*			else if (s == 2) {
-//				if (argBess >=0 && argBess <= 10) {
-//					ScaledBesselInApprox = ScaledBesselI_0 - 
-//(0.31501*exp(-argBess/2.59524) + 0.66376*exp(-argBess/0.77492) + 0.01877);
-//				} else if (argBess > 10){
-//					ScaledBesselInApprox  = ScaledBesselI_0 - 
-//(0.00526*exp(-argBess/56.75778) + 0.07012*exp(-argBess/7.63132));
-//				}	
-//			}
-//			else if (s == 3) {
-//				if (argBess >=0 && argBess <= 10) {
-//					ScaledBesselInApprox = ScaledBesselI_0 - 
-//						(0.43971*exp(-argBess/2.87401) + 0.51964*exp(-argBess/0.64401) + 0.03649);
-//				} else if (argBess > 10){
-//					ScaledBesselInApprox = ScaledBesselI_0 - 
-//						(0.00965*exp(-argBess/64.4686) + 0.11764*exp(-argBess/8.68577));
-//				}	
-//			}else if (s == 4) {
-//				if (argBess >=0 && argBess <= 10) {
-//					ScaledBesselInApprox = ScaledBesselI_0 - 
-//(0.39464*exp(-argBess/3.6857) + 0.55537*exp(-argBess/0.63911) + 0.04741);
-//				} else if (argBess > 10){
-//					ScaledBesselInApprox = ScaledBesselI_0 - 
-//(0.15563*exp(-argBess/9.78864) + 0.0142*exp(-argBess/72.4432));
-//				}	
-//			}else if (s == 5) {
-//				if (argBess >=0 && argBess <= 10) {
-//					ScaledBesselInApprox = ScaledBesselI_0 - 
-//(0.59352*exp(-argBess/0.66634) + 0.34453*exp(-argBess/4.38543) + 0.05867);
-//				} else if (argBess > 10){
-//					ScaledBesselInApprox = ScaledBesselI_0 - 
-//(0.01778*exp(-argBess/83.15393) + 0.1749*exp(-argBess/11.27954));
-//				}	
-//			}else if (s == 6) {
-//				if (argBess >=0 && argBess <= 10) {
-//					ScaledBesselInApprox = ScaledBesselI_0 - 
-//(0.61095*exp(-argBess/0.68453) + 0.31*exp(-argBess/4.55027) + 0.07473);
-//				} else if (argBess > 10){
-//					ScaledBesselInApprox = ScaledBesselI_0 - 
-//(0.02033*exp(-argBess/96.00131) + 0.17945*exp(-argBess/13.13505));
-//				}	
-//			}else if (s == 7) {
-//				if (argBess >=0 && argBess <= 10) {
-//					ScaledBesselInApprox = ScaledBesselI_0 - 
-//(0.61248*exp(-argBess/0.68843) + 0.29203*exp(-argBess/4.28334) + 0.09082);
-//				} else if (argBess > 10){
-//					ScaledBesselInApprox = ScaledBesselI_0 - 
-//(0.02148*exp(-argBess/112.94641) + 0.17485*exp(-argBess/15.45809));
-//				}	
-//			} else {
-//				fprintf(stdout, "function.c: ELiMA: BesselInApprox: A too much value of the parameter S was used");fflush(stdout);
-//				exit(1);
-//			}*/
-//			RS = preScaledBess * ScaledBesselInApprox;
-//
-///*			if ( s==0 ) {
-//				ImMagnetPart += -RS *
-//					(exp(-theta1Hm*theta1Hm)  - exp(-theta2Hp*theta2Hp));
-//
-//				ReMagnetPart += RS * 
-//					(DispertionFunctionApproximation(theta1Hm) -
-//						DispertionFunctionApproximation(theta2Hp));
-//				if (fabs(W) <= 1e-16) {
-//					ImMagnetPartTilde +=  -(tau/tau_par) * RS * exp(-theta2Hp*theta2Hp);
-//				} else {
-//					ImMagnetPartTilde = ImMagnetPart;
-//				}
-//			} else*/ {
-//				//ImMagnetPart += - RS *
-//				//		(exp(-s*beta/2.)*(exp(-theta1Hm*theta1Hm)  - exp(-theta2Hp*theta2Hp)) +
-//				//		exp(s*beta/2.)*(exp(-theta1Hp*theta1Hp)  - exp(-theta2Hm*theta2Hm)));
-//				//ReMagnetPart += RS *
-//				//	(exp(-s*beta/2)*(DispertionFunctionApproximation(theta1Hm) -
-//				//				DispertionFunctionApproximation(theta2Hp)) +
-//				//	exp(s*beta/2)*(DispertionFunctionApproximation(theta1Hp)-
-//				//				DispertionFunctionApproximation(theta2Hm)));
-//				ImMagnetPart += -RS * exp(s*beta/2.)*
-//						(exp(-s*beta)*(exp(-theta1Hm*theta1Hm)  - exp(-theta2Hp*theta2Hp)) +
-//						(exp(-theta1Hp*theta1Hp)  - exp(-theta2Hm*theta2Hm)));
-//				ImMagnetPartTilde +=  RS * exp(s*beta/2.)*
-//						(exp(-theta2Hp*theta2Hp) +
-//						 exp(-s*beta)*exp(-theta2Hm*theta2Hm));
-//				ReMagnetPart += RS * exp(s*beta/2)*
-//					(exp(-s*beta)*(DispertionFunctionApproximation(theta1Hm) -
-//								DispertionFunctionApproximation(theta2Hp)) +
-//					(DispertionFunctionApproximation(theta1Hp)-
-//								DispertionFunctionApproximation(theta2Hm)));
-//				/*if (fabs(W) <= 1e-16) {
-//					ImMagnetPartTilde +=  (tau/tau_par)* RS *(
-//						exp(-s*beta/2.)*exp(-theta2Hm*theta2Hm)*(1+s*h/gz/gz/Delta) +
-//						exp(s*beta/2.)*exp(-theta2Hp*theta2Hp)*(1-s*h/gz/gz/Delta));
-//				} else*/ /*{
-//					ImMagnetPartTilde = ImMagnetPart;
-//				}*/
-//				if (s == 0) {
-//					tmpIm0=ImMagnetPart;
-//					tmpRe0=ReMagnetPart;
-//					tmpImTilde0=ImMagnetPartTilde;
-//				}
-//			}
-//
-//		}
-//		/*if (fabs(W) <= 1e-16) {
-//			TemperatureFactor = 1.;
-//		} else*/{
-//			TemperatureFactor = 1/(1.-exp(-2.*Delta*W/tau));
-//		}
-//		//////////////////////////////////////////
-//		//to get the PostInt part
-//		// An imaginary part of susceptibility is
-//		ImMagnetPart=ImMagnetPart-tmpIm0/2;
-//		ReMagnetPart=ReMagnetPart-tmpRe0/2;
-//		ImMagnetPartTilde=ImMagnetPartTilde-tmpImTilde0/2;
-//
-//		ImKappa = PreSusc*ImMagnetPart/g/g/gz;
-//		
-//		// an real part of susceptibility is
-//		ReKappa = PreSusc*ReMagnetPart/g/g/gz;
-//
-//		PostInt = 1/((1+ReKappa)*(1+ReKappa) + ImKappa*ImKappa);
-//		
-//		//return PreInt*ImMagnetPartTilde; 
-//		//return PreInt*W/(g*g*g*g*gz)*TemperatureFactor*PostInt; 
-//		//return ImMagnetPartTilde*W/(g*g*g*g*gz)*TemperatureFactor*PostInt; 
-//		return PreInt*ImMagnetPartTilde*((gx*Sx + gy*Sy + gz*Sz) - Delta*mM*g*g)/(g*g*g*g*gz)*PostInt; 
-//		//return PreInt*W*Up*PostInt/(g*g*g*g)/(ge); 
-//	}
-//}
+double ELiMA(double gx, double gy, double gz, double* parmtr){
+		// it needs to obtaine this parameter for all new jobs 
+	
+	// a difference between Landau levels
+	double s ; 
+	double N = 4;
+
+	// components of the union velocity vector V = V_i/V_0
+	double Sx = parmtr[0]; 
+	double Sy = parmtr[1];
+	double Sz = parmtr[2];
+
+	// value of the union velocity vector V = V_i/V_0
+	double V = parmtr[3];
+
+	// a perpendicular and a parallel components of the temperature of the electron gas
+	// tau_per = tau_per / tau_per; = 1; 
+	double tau_per = tau_perpendicular();
+	double tau_par = tau_parallel(parmtr[5], parmtr[4]);
+
+	double h = parmtr[9];
+	double tau;
+	double W;		// dimmles frequency
+	double beta;	// magnet argument of exponent
+	double a2;		// parameter of Lambda-function, 
+						// it is always used in form a^{2N}	
+	double PreSusc;	// prefix before susseptibility
+	double Delta = delta(parmtr[4]);		// parameter delta = hbar W_0 / 2m_eV_0^2 	
+	double g;
+	double ReKappa, ImKappa;
+	double Xi1, Xi2;
+
+//	double A_Khel = 1.;			// Polarization coefficient by Khelemelia (h=0)
+//	double A_Lark = -1.;			// Polarization coefficient by Larkin
+//	double A_Akhi = 2.;			// Polarization coefficient by Akhiezer
+//	double AB = 4/PI;				// Polarization coefficient by Khelemelia (h != 0)
+
+	double PreInt, PostInt;
+	double  Up = 0, Up0;
+	double Pi = 3.14159265;
+	double TemperatureFactor;		// a temperature factor 1-exp(-2 w delta0/tau)
+	double argBess, preBess;
+	double ImMagnetPart = 0.;
+	double ImMagnetPartTilde = 0.;
+	double ReMagnetPart = 0.;
+	double preScaledBess; 
+	double exp_beta, exp_beta2;
+	double ScaledBesselI_0, ScaledBesselI_1;
+	double ScaledBesselInApprox;
+	double ScaledBessel2 = 0, ScaledBessel1=0;
+	double tmpRe0, tmpIm0, tmpImTilde0;
+
+	//for (int i = 0; i < 10; i++) {
+	//	fprintf(stdout, "par[%d] = %f\n", i, parmtr[i]); fflush(stdout);
+	//}
+	////////////////////////////////////////
+	// General position
+	g = sqrt(gx*gx + gy*gy + gz*gz);		// a dimless wave vector	
+	W = (gx*Sx + gy*Sy + gz*Sz) - Delta*mM*g*g;		// a dimless frequency, determined as hw/hw_{0} = (E_{p} - E_{p-hk})/hw_{0}
+	tau = tau_par/3. + 2.0*tau_per/3.0;		// temperature
+
+	if (h == 0) { // procedure calculate non magnetic case (h = 0)
+		return ELIA(gx, gy, gz, parmtr);
+	} 
+
+	if ((gz == 0) || ((gx == 0) && (gy == 0) && (gz == 0))) {  // to exclude numerical divergence
+		return 0;
+	} else {
+		//PreSusc = 1/4.*sqrt(Pi)/sqrt(2*tau_par);  //a prefix of susceptibility. It's no variables of integration
+		PreSusc = 1/4./Delta*sqrt(Pi)/sqrt(2*tau_par);  //a prefix of susceptibility. It's no variables of integration
+		PreInt = PreSusc/Pi/Pi;	
+
+		Xi1 = (W +  Delta*gz*gz)/sqrt(2*tau_par)/gz; // variable 1 of exponenta;
+		Xi2 = (W -  Delta*gz*gz)/sqrt(2*tau_par)/gz; // variable 2 of exponenta;
+
+		a2 = (gx*gx + gy*gy)*Delta/h;	// an argument of LambdaFunction
+											// the parameter is inverse to the parameter of the magnetic field h = W_H/W_0
+		beta = 2.*Delta*h/tau_per;		// an argument of exp
+											// the argument is proportinal to the parameter of the magnetic field h = W_H/W_0  
+		exp_beta2 = exp(-beta/2.);
+		exp_beta = exp(-beta);
+
+		// for GS 
+		//argBess = 2.*a2*(exp(-beta/2.)/(1.-exp(-beta)));
+		argBess = 2.*a2*(exp_beta2/(1.-exp_beta));
+		//preBess	= exp(-a2*(1.+exp(-beta))/(1.-exp(-beta)));	
+
+		//preScaledBess = exp(-a2*(1.-exp(-beta/2.))/(1.+exp(-beta/2.)));	
+		preScaledBess	= exp(-a2*(1.-exp_beta2)/(1.+ exp_beta2));	
+
+		//Scaled modified bessel function exp(-|x|)*BesselI(n, x)
+		ScaledBesselI_0 = gsl_sf_bessel_I0_scaled(argBess);
+		ScaledBesselI_1 = gsl_sf_bessel_I1_scaled(argBess);
+		
+		for (s = 0; s<=N; s++) {
+			double theta1Hp, theta1Hm, theta2Hp, theta2Hm;
+			double XiSH;
+			double RS;
+			double BesselInApprox;
+			XiSH = s*h/sqrt(2.*tau_par)/gz;
+			theta1Hp = Xi1 + XiSH;
+			theta1Hm = Xi1 - XiSH;
+			theta2Hp = Xi2 + XiSH;
+			theta2Hm = Xi2 - XiSH;
+	//		fprintf(stdout, "tauPar = %f\t tauPer = %f\n", parmtr[7], parmtr[8]);
+			if (s == 0) {
+				ScaledBesselInApprox = ScaledBesselI_0;
+				ScaledBessel2 = ScaledBesselInApprox;
+			} else if (s == 1){
+				ScaledBesselInApprox = ScaledBesselI_1;
+				ScaledBessel1 = ScaledBesselInApprox;
+			} 
+			else{// if (s == 2) {
+				if (fabs(argBess)  > 1e-16) {
+					ScaledBesselInApprox = 	gsl_sf_bessel_In_scaled(s, argBess);
+					//ScaledBesselInApprox = 	ScaledBessel2 -2*(s-1)/(argBess)*ScaledBessel1;
+				} else {
+					ScaledBesselInApprox = 0;
+				}	
+				ScaledBessel2=ScaledBessel1;
+				ScaledBessel1 = ScaledBesselInApprox;
+			}
+/*			else if (s == 2) {
+				if (argBess >=0 && argBess <= 10) {
+					ScaledBesselInApprox = ScaledBesselI_0 - 
+(0.31501*exp(-argBess/2.59524) + 0.66376*exp(-argBess/0.77492) + 0.01877);
+				} else if (argBess > 10){
+					ScaledBesselInApprox  = ScaledBesselI_0 - 
+(0.00526*exp(-argBess/56.75778) + 0.07012*exp(-argBess/7.63132));
+				}	
+			}
+			else if (s == 3) {
+				if (argBess >=0 && argBess <= 10) {
+					ScaledBesselInApprox = ScaledBesselI_0 - 
+						(0.43971*exp(-argBess/2.87401) + 0.51964*exp(-argBess/0.64401) + 0.03649);
+				} else if (argBess > 10){
+					ScaledBesselInApprox = ScaledBesselI_0 - 
+						(0.00965*exp(-argBess/64.4686) + 0.11764*exp(-argBess/8.68577));
+				}	
+			}else if (s == 4) {
+				if (argBess >=0 && argBess <= 10) {
+					ScaledBesselInApprox = ScaledBesselI_0 - 
+(0.39464*exp(-argBess/3.6857) + 0.55537*exp(-argBess/0.63911) + 0.04741);
+				} else if (argBess > 10){
+					ScaledBesselInApprox = ScaledBesselI_0 - 
+(0.15563*exp(-argBess/9.78864) + 0.0142*exp(-argBess/72.4432));
+				}	
+			}else if (s == 5) {
+				if (argBess >=0 && argBess <= 10) {
+					ScaledBesselInApprox = ScaledBesselI_0 - 
+(0.59352*exp(-argBess/0.66634) + 0.34453*exp(-argBess/4.38543) + 0.05867);
+				} else if (argBess > 10){
+					ScaledBesselInApprox = ScaledBesselI_0 - 
+(0.01778*exp(-argBess/83.15393) + 0.1749*exp(-argBess/11.27954));
+				}	
+			}else if (s == 6) {
+				if (argBess >=0 && argBess <= 10) {
+					ScaledBesselInApprox = ScaledBesselI_0 - 
+(0.61095*exp(-argBess/0.68453) + 0.31*exp(-argBess/4.55027) + 0.07473);
+				} else if (argBess > 10){
+					ScaledBesselInApprox = ScaledBesselI_0 - 
+(0.02033*exp(-argBess/96.00131) + 0.17945*exp(-argBess/13.13505));
+				}	
+			}else if (s == 7) {
+				if (argBess >=0 && argBess <= 10) {
+					ScaledBesselInApprox = ScaledBesselI_0 - 
+(0.61248*exp(-argBess/0.68843) + 0.29203*exp(-argBess/4.28334) + 0.09082);
+				} else if (argBess > 10){
+					ScaledBesselInApprox = ScaledBesselI_0 - 
+(0.02148*exp(-argBess/112.94641) + 0.17485*exp(-argBess/15.45809));
+				}	
+			} else {
+				fprintf(stdout, "function.c: ELiMA: BesselInApprox: A too much value of the parameter S was used");fflush(stdout);
+				exit(1);
+			}*/
+			RS = preScaledBess * ScaledBesselInApprox;
+
+/*			if ( s==0 ) {
+				ImMagnetPart += -RS *
+					(exp(-theta1Hm*theta1Hm)  - exp(-theta2Hp*theta2Hp));
+
+				ReMagnetPart += RS * 
+					(DispertionFunctionApproximation(theta1Hm) -
+						DispertionFunctionApproximation(theta2Hp));
+				if (fabs(W) <= 1e-16) {
+					ImMagnetPartTilde +=  -(tau/tau_par) * RS * exp(-theta2Hp*theta2Hp);
+				} else {
+					ImMagnetPartTilde = ImMagnetPart;
+				}
+			} else*/ {
+				//ImMagnetPart += - RS *
+				//		(exp(-s*beta/2.)*(exp(-theta1Hm*theta1Hm)  - exp(-theta2Hp*theta2Hp)) +
+				//		exp(s*beta/2.)*(exp(-theta1Hp*theta1Hp)  - exp(-theta2Hm*theta2Hm)));
+				//ReMagnetPart += RS *
+				//	(exp(-s*beta/2)*(DispertionFunctionApproximation(theta1Hm) -
+				//				DispertionFunctionApproximation(theta2Hp)) +
+				//	exp(s*beta/2)*(DispertionFunctionApproximation(theta1Hp)-
+				//				DispertionFunctionApproximation(theta2Hm)));
+				ImMagnetPart += -RS * exp(s*beta/2.)*
+						(exp(-s*beta)*(exp(-theta1Hm*theta1Hm)  - exp(-theta2Hp*theta2Hp)) +
+						(exp(-theta1Hp*theta1Hp)  - exp(-theta2Hm*theta2Hm)));
+				ImMagnetPartTilde +=  RS * exp(s*beta/2.)*
+						(exp(-theta2Hp*theta2Hp) +
+						 exp(-s*beta)*exp(-theta2Hm*theta2Hm));
+				ReMagnetPart += RS * exp(s*beta/2)*
+					(exp(-s*beta)*(DispertionFunctionApproximation(theta1Hm) -
+								DispertionFunctionApproximation(theta2Hp)) +
+					(DispertionFunctionApproximation(theta1Hp)-
+								DispertionFunctionApproximation(theta2Hm)));
+				/*if (fabs(W) <= 1e-16) {
+					ImMagnetPartTilde +=  (tau/tau_par)* RS *(
+						exp(-s*beta/2.)*exp(-theta2Hm*theta2Hm)*(1+s*h/gz/gz/Delta) +
+						exp(s*beta/2.)*exp(-theta2Hp*theta2Hp)*(1-s*h/gz/gz/Delta));
+				} else*/ /*{
+					ImMagnetPartTilde = ImMagnetPart;
+				}*/
+				if (s == 0) {
+					tmpIm0=ImMagnetPart;
+					tmpRe0=ReMagnetPart;
+					tmpImTilde0=ImMagnetPartTilde;
+				}
+			}
+
+		}
+		/*if (fabs(W) <= 1e-16) {
+			TemperatureFactor = 1.;
+		} else*/{
+			TemperatureFactor = 1/(1.-exp(-2.*Delta*W/tau));
+		}
+		//////////////////////////////////////////
+		//to get the PostInt part
+		// An imaginary part of susceptibility is
+		ImMagnetPart=ImMagnetPart-tmpIm0/2;
+		ReMagnetPart=ReMagnetPart-tmpRe0/2;
+		ImMagnetPartTilde=ImMagnetPartTilde-tmpImTilde0/2;
+
+		ImKappa = PreSusc*ImMagnetPart/g/g/gz;
+		
+		// an real part of susceptibility is
+		ReKappa = PreSusc*ReMagnetPart/g/g/gz;
+
+		PostInt = 1/((1+ReKappa)*(1+ReKappa) + ImKappa*ImKappa);
+		
+		//return PreInt*ImMagnetPartTilde; 
+		//return PreInt*W/(g*g*g*g*gz)*TemperatureFactor*PostInt; 
+		//return ImMagnetPartTilde*W/(g*g*g*g*gz)*TemperatureFactor*PostInt; 
+		return PreInt*ImMagnetPartTilde*((gx*Sx + gy*Sy + gz*Sz) - Delta*mM*g*g)/(g*g*g*g*gz)*PostInt; 
+		//return PreInt*W*Up*PostInt/(g*g*g*g)/(ge); 
+	}
+}
 
 //recieve const variable:
 // normali
@@ -527,15 +533,26 @@ double ELIA(double gx, double gy, double gz, double* parmtr){
 	// Ee = m_e*c^2 =  0.51099895 E6 eV
 // hbar/2/(m_e) = 0.579858362 s
 double delta_norm (const double velosity_ion, const double velosity_Eperp, const double velosity_Eparall,  const double frequency_Eplasma, const double frequency_Ecyclotron){
-	const double pre = 0.579858362; // hbar/2/(m_e) = 0.579858362 s
-	return pre*sqrt(pow(frequency_Eplasma,2)+pow(frequency_Ecyclotron,2))/
-		(pow(velosity_Eperp,2) + pow(velosity_Eparall,2) + pow(velosity_ion,2));
+	// hbar = 1.054571817*10^(-34) J*s
+	// m_e = 9.10938356*10^(-31) kg
+	const double pre = 5.78838189e-5; // hbar/2/(m_e) = 0.0578838189244059*10^(-3) J*s/kg
+	return pre* averageFrequency(frequency_Eplasma, frequency_Ecyclotron) /
+		averageVelocitySquare(velosity_ion, velosity_Eperp, velosity_Eparall);
 }
 double averageVelocitySquare(const double velosity_ion, const double velosity_Eperp, const double velosity_Eparall){
 	return pow(velosity_Eperp,2) + pow(velosity_Eparall,2) + pow(velosity_ion,2);
 }
 double averageFrequency (const double frequency_Eplasma, const double frequency_Ecyclotron){
-
+	return sqrt(pow(frequency_Eplasma, 2) + pow(frequency_Ecyclotron, 2));
+}
+double averageTau(double tau_perp, double tau_parall) {
+	return (tau_perp * 2. / 3.) + (tau_parall / 3.);
+}
+double tau_perp_norm(double tau_perp, double tau_parall) {
+	return tau_perp / averageTau(tau_perp, tau_parall);
+}
+double tau_parallel_norm(double tau_perp, double tau_parall) {
+	return tau_parall / averageTau(tau_perp, tau_parall);
 }
 //double elimaH(double gx, double gy, double gz, double* set_parmtr) {
 //	const double vX = set_parmtr[0],

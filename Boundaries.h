@@ -4,8 +4,8 @@
 
 #ifndef BOUNDARIES_H
 #define BOUNDARIES_H
-#define A 1.E4
-#define B 1.E4
+#define A 2.5E5
+#define B 2.5E5
 // for ELIA
 #define LOWX -A
 #define UPX A

@@ -160,13 +160,16 @@ void PreIntegration (int rank, int size, int series, double *set_parmtrs, double
 	//}
 	fprintf(stdout, "Proc %d(%d) start!\n", rank, size); fflush(stdout);
 	///%%%%%%%%%%%%%%%%%%%%
+	fprintf(stdout, "tau_per_norm = %f (%f eV), tau_par_norm = %f (%f eV) \n", 
+		tau_perp_norm(set_parmtrs[4], set_parmtrs[5]), set_parmtrs[4],
+		tau_parallel_norm(set_parmtrs[4], set_parmtrs[5]), set_parmtrs[5]); fflush(stdout);
 	/////////////////////////////////////////////////////////////
 	//Integration(ELiMA, series, set_parmtrs, rank, size, count, list, &subSumm, &tempstep, bounds);
 	//fprintf(stdout, "Proc %d(%d) start!\n", rank, size);
 //	if (rank == 0) {
 		//fprintf(stdout, "proc %d(%d): series %d, count %d, \n par[2] = %f, bounds[0] = %f\n", rank, size, series, count, set_parmtrs[2], bounds[0]);
 //	}
-	Integration(ELIA, series, set_parmtrs, rank, size, count, list, &subSumm, &tempstep, bounds);
+	//Integration(ELIA, series, set_parmtrs, rank, size, count, list, &subSumm, &tempstep, bounds);
 	///%%%%%%%%%%%%%%%%%%%%	
 	//Integration(ELI, series, set_parmtrs, rank, size, count, list, &subSumm, &tempstep, bounds);
 	//Integration(function3D, series, set_parmtrs, rank, size, count, list, &subSumm, &tempstep, bounds);
