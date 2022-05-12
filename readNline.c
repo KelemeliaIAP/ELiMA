@@ -47,10 +47,10 @@ int parseFile(FILE** file, const int arraySize, char** headers[], double* parame
 	// Set pointer to beginning of file:
 	fseek(*file, 0L, SEEK_SET);
 	
-	for (int i = 0; i < 10; i++) {
+	for (int i = 0; i < arraySize; i++) {
 		fscanf_s(*file, "%s", tmpArrayName[i], _countof(tmpArrayName[i]));
 		headers[0][i] = tmpArrayName[i];
-		//fprintf(stdout, "%s\n", headers[0][i]);
+//		fprintf(stdout, "%s\n", headers[0][i]);
 	}
 
 	//here is a tabulation symbol
@@ -63,9 +63,13 @@ int parseFile(FILE** file, const int arraySize, char** headers[], double* parame
 	//get parameters
 	char tmpArrayValue[30][81];
 	char* eptr;
-	for (int i = 0; i < 10; i++) {
+	//double strtod(const char *str, char **endptr) is 
+	//the C library function converts the string pointed to by the argument str 
+	//to a floating-point number (type double).
+	for (int i = 0; i < arraySize; i++) {
 		fscanf_s(*file, "%s", tmpArrayValue[i], _countof(tmpArrayValue[i]));
 		parameters[0][i] = strtod(tmpArrayValue[i], &eptr);
+//		fprintf(stdout, "%s\n", tmpArrayValue[i]);
 	}
 
 	return 1;

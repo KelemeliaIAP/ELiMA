@@ -59,14 +59,17 @@ int vectorDirection(const int angle, double *unionVector, char *msg[]);
 int main( int argc, TCHAR *argv[] )
 {
 	int i;
-	double velocityValue = 1.2; //Vi/V_0(10^6 m/c)
-	double magnFieldValue = 1000.; //wh/wp
+	double velocityValue = 1.0;		//Vi/Vo(Vo = 10^6 m/c)
+	double magnFieldValue = 10000;	// norm cyclotron frequency wh/wp 
+	//double magnFieldValue = 2.9e15;	// cyclotron frequency [wh] = s^(-1)
 	const int angleVelocity = 0;	// set(0, 30, 45, 60, 90)
-	const int angleMagnField = 0; // set(0, 30, 45, 60, 90)
-	double tempPerp = 0.1; //eV
-	double tempParall = 0.00001; //eV
+	const int angleMagnField = 0;	// set(0, 30, 45, 60, 90)
+	double tempPerp = 0.001;			// [T_e,perp] = eV
+	double tempParall = 0.0001;	// [T_e,parall] = eV
+	double plasmaFrequency = 2.9e10; // plasma frequency [wp] = s^(-1)
+
 	char *msg;						// pattern for message of result of execution
-	int countParmtrs = 10;			// count of task parameters
+	int countParmtrs = 11;			// count of task parameters
 	double *arrayParmtrValue;		// array of task parameters values
 	char **arrayParmtrName;			// array of task parameters names
 	double unionVelVector[3];		// union velocity vector component
@@ -78,7 +81,7 @@ int main( int argc, TCHAR *argv[] )
 	char* adrDateFile = "d:\\01_Khelemelia\\02_IAP\\04_Projects\\ELiMA\\EliMA_WORK\\ELIMA_programming\\ELIMA_git\\ELiMA\\ELiMA\\data.dat";
 
 										//file to record parameters  xx
-	char *parmtrsExecProg = " -n 4 ";	// parameters of exec program;
+	char *parmtrsExecProg = " -n 2 ";	// parameters of exec program;
 	char* adrExecProg = "mpiexec";		// execute program
 	char commandLine[1024] = "";		// command line
 
@@ -93,10 +96,11 @@ int main( int argc, TCHAR *argv[] )
 	arrayParmtrName[3] = "|V|";
 	arrayParmtrName[4] = "Te_per";
 	arrayParmtrName[5] = "Te_par";
-	arrayParmtrName[6] = "Hx";
-	arrayParmtrName[7] = "Hy";
-	arrayParmtrName[8] = "Hz";
-	arrayParmtrName[9] = "|H|";
+	arrayParmtrName[6] = "Wp";
+	arrayParmtrName[7] = "Whx";
+	arrayParmtrName[8] = "Why";
+	arrayParmtrName[9] = "Whz";
+	arrayParmtrName[10] = "|Wh|";
 
 	// Union velocity vector nV definition
 	vectorDirection(angleVelocity, unionVelVector, &msg);
@@ -118,17 +122,17 @@ int main( int argc, TCHAR *argv[] )
 	}
 
 	// pack parameters
-	arrayParmtrValue[0] = vectorVelIon[0];		// Vx
-	arrayParmtrValue[1] = vectorVelIon[1];		// Vy
-	arrayParmtrValue[2] = vectorVelIon[2];		// Vz
-	arrayParmtrValue[3] = velocityValue;		//|V|
+	arrayParmtrValue[0] = vectorVelIon[0];		// Vx/V0 
+	arrayParmtrValue[1] = vectorVelIon[1];		// Vy/V0
+	arrayParmtrValue[2] = vectorVelIon[2];		// Vz/V0
+	arrayParmtrValue[3] = velocityValue;		//|V/V0|
 	arrayParmtrValue[4] = tempPerp;				// Te_perp, eV
 	arrayParmtrValue[5] = tempParall;			// Te_parallel, eV
-	arrayParmtrValue[6] = vectorMagnStrength[0];// Hx
-	arrayParmtrValue[7] = vectorMagnStrength[1];// Hy
-	arrayParmtrValue[8] = vectorMagnStrength[2];// Hz
-	arrayParmtrValue[9] = magnFieldValue;		//|H|
-	
+	arrayParmtrValue[6] = plasmaFrequency;		// wP, s^(-1)
+	arrayParmtrValue[7] = vectorMagnStrength[0];// wHx
+	arrayParmtrValue[8] = vectorMagnStrength[1];// wHy
+	arrayParmtrValue[9] = vectorMagnStrength[2];// wHz
+	arrayParmtrValue[10] = magnFieldValue;		//|wH|, s^(-1) 	
 	//display parameters
 	for(i = 0; i < countParmtrs; i++) {
 		fprintf(stdout, "%s\t%e\n", arrayParmtrName[i], arrayParmtrValue[i]);

@@ -82,11 +82,25 @@ double ELIA(double gx, double gy, double gz, double* parmtr);
 	// Хелемели А.В. Потери в замагниченном электронном газе... 
 double ELiMA(double gx, double gy, double gz, double* parmtr);
 
-double elimaH(double gx, double gy, double gz, double* parmtr);
+double V_0();
 
-double averageTau(double tau_perp, double tau_parall) ;
+double velocity_ion(double velocity_ion_norm);
+
+double velocity_electron(double temperature);
+
+double average_velocity_square(const double temperature_Eperp, const double temperature_Eparall);
+
+double average_frequency(const double frequency_Eplasma, const double frequency_Ecyclotron);
+
+double frequency_norm(double frequency, const double frequency_Eplasma, const double frequency_Ecyclotron);
+
+double average_tau(double tau_perp, double tau_parall);
 
 double tau_perp_norm(double tau_perp, double tau_parall);
 
 double tau_parallel_norm(double tau_perp, double tau_parall);
+
+double delta_norm(const double temperature_Eperp, const double temperature_Eparall, const double frequency_Eplasma, const double frequency_Ecyclotron_norm);
+
+double ELiMA_H(double gx, double gy, double gz, double* set_parmtr);
 #endif

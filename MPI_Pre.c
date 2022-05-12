@@ -20,6 +20,8 @@
 #include <mpi.h>
 #include <math.h>
 #include <time.h> //
+//#include <cmath>
+#include <gsl/gsl_sf_bessel.h>
 
 void PreIntegration (int rank, int size, int series, double *set_parmtrs, double *result) {
 	int MPIErrorCode=1;
@@ -38,7 +40,7 @@ void PreIntegration (int rank, int size, int series, double *set_parmtrs, double
 	int totalstep = 0;
 	int i, j, k;
 	double lowX, lowY, lowZ;
-	int count = 0;
+	int count = 0; //
 	double startwtime = 0.0;
 	double endwtime = 0.0;
 
@@ -153,22 +155,23 @@ void PreIntegration (int rank, int size, int series, double *set_parmtrs, double
 	bounds[4] = LOWZ;
 	bounds[5] = UPZ;
 
-	//if (rank == 0) {
-	//	for(i = 0; i < 6; i++) {
-	//	fprintf(stdout, "bound %d = %g\n", i, bounds[i]); fflush(stdout);
-	//	}
-	//}
-	fprintf(stdout, "Proc %d(%d) start!\n", rank, size); fflush(stdout);
-	///%%%%%%%%%%%%%%%%%%%%
-	fprintf(stdout, "tau_per_norm = %f (%f eV), tau_par_norm = %f (%f eV) \n", 
-		tau_perp_norm(set_parmtrs[4], set_parmtrs[5]), set_parmtrs[4],
-		tau_parallel_norm(set_parmtrs[4], set_parmtrs[5]), set_parmtrs[5]); fflush(stdout);
+	if (rank == 0) {
+
+		//ELIA(1, 1, 1, set_parmtrs);
+		//ELIA(0.1, 0.1, 0.1, set_parmtrs);
+		//ELIA(10000, 10000, 10000, set_parmtrs);
+		//ELiMA(1, 1, 1, set_parmtrs);
+		//ELiMA(0.1, 0.1, 0.1, set_parmtrs);
+		//ELiMA(10000, 10000, 10000, set_parmtrs);
+		//fprintf(stdout, "Bessel(%d,0) =  %f\n",100, gsl_sf_bessel_In_scaled(1000, 100000));
+		//fprintf(stdout, "funct value %f\n", ELiMA(0, 0, 0, set_parmtrs));
+		//fprintf(stdout, "funct value %f\n", ELiMA(1, 1, 1, set_parmtrs));
+		//fprintf(stdout, "funct value %f\n", ELiMA(10000, 10000, 10000, set_parmtrs));
+	}
 	/////////////////////////////////////////////////////////////
-	//Integration(ELiMA, series, set_parmtrs, rank, size, count, list, &subSumm, &tempstep, bounds);
+	//Integration(ELiMA_H, series, set_parmtrs, rank, size, count, list, &subSumm, &tempstep, bounds);
+	Integration(ELiMA, series, set_parmtrs, rank, size, count, list, &subSumm, &tempstep, bounds);
 	//fprintf(stdout, "Proc %d(%d) start!\n", rank, size);
-//	if (rank == 0) {
-		//fprintf(stdout, "proc %d(%d): series %d, count %d, \n par[2] = %f, bounds[0] = %f\n", rank, size, series, count, set_parmtrs[2], bounds[0]);
-//	}
 	//Integration(ELIA, series, set_parmtrs, rank, size, count, list, &subSumm, &tempstep, bounds);
 	///%%%%%%%%%%%%%%%%%%%%	
 	//Integration(ELI, series, set_parmtrs, rank, size, count, list, &subSumm, &tempstep, bounds);

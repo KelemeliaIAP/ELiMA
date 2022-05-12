@@ -31,22 +31,23 @@
 #include <stdlib.h> //malloc
 #include <time.h>
 #include <string.h> // atof
- 
+#include <gsl/gsl_sf_bessel.h> 
 
 # ifndef PRECISION
 #define PRECISION 0.0001
 #endif
 
 // numbers of task parameters
-#define COUNTPARMTRS 10	// 3 - the union 3-dim velocity vector
+#define COUNTPARMTRS 11	// 3 - the union 3-dim velocity vector
 			// 1 - an absolutly value of the velocity
 			// 2 - the 2-dim electron Maxwell temperature (parallel and perpendicular component)
+			// 1 - electron plasma frequency magnitude
 			// 3 - the union 3-dim magnetic field vector
 			// 1 - an absolutly value of the magnetic field
 // Program name
 #define PROG_NAME "ELiMA"
 // Program version
-#define PROG_VERSION ".v.7.01"
+#define PROG_VERSION ".v.git"
 // format of file for calculated data
 #define FILE_FORMAT ".dat"
 // Names od income parameters
@@ -64,7 +65,7 @@
 // Output file is written here:
 #define OUT_FILEPATH "D:\\01_Khelemelia\\02_IAP\\04_Projects\\ELiMA\\EliMA_WORK\\MPI_Results\\"
 #define IN_FILEPATH "D:\\01_Khelemelia\\02_IAP\\04_Projects\\ELiMA\\EliMA_WORK\\ELIMA_programming\\ELiMA_git\\ELiMA\\ELiMA\\data.dat"
-#define PARAMETERS_COUNT 10
+#define PARAMETERS_COUNT 11
 #define PARAMETERS_NAME_LENGTH 6
 
 int velocityDefine(double unionvector[3], double vectorvalue, double *vvector, char *msg[]);
@@ -124,7 +125,6 @@ int main (int argc, char **argv) {
 			exit(EXIT_FAILURE);
 		}
 	}
-
 	////////////////////////////
 	// Главная часть программы//
 	////////////////////////////
@@ -160,28 +160,23 @@ int main (int argc, char **argv) {
 			exit(EXIT_FAILURE);
 		}
 		parseFile(&InFile, PARAMETERS_COUNT, &setParmtrsName, &setParmtrsValue, &msg);
-		//for (int i = 0; i < PARAMETERS_COUNT; i++) {
-		//	fprintf(stdout, "%s\t", setParmtrsName[i]);
-		//}
-		//fprintf(stdout, " \n");
-		//for (int i = 0; i < PARAMETERS_COUNT; i++) {
-		//	//fprintf(stdout, "%.2e", setParmtrsValue[i]);
-		//}
-		//fprintf(stdout, " \n");
+		for (int i = 0; i < PARAMETERS_COUNT; i++) {
+			printf("par[%d]=%f\n", i, setParmtrsValue[i]);
+		}
 	}
 
 	//share parameters value with coprocessors
 	if (processorRank == 0)
 	{
 		for (int i = 1; i < processorSetSize; i++) {
-			MPI_Send(setParmtrsValue, 10, MPI_DOUBLE, i, 123, comm);
+			MPI_Send(setParmtrsValue, PARAMETERS_COUNT, MPI_DOUBLE, i, 123, comm);
 		}
 	}
 
 	if (processorRank != 0)
 	{
 		MPI_Status status;
-		MPI_Recv(setParmtrsValue, 10, MPI_DOUBLE, 0, 123, comm, &status);
+		MPI_Recv(setParmtrsValue, PARAMETERS_COUNT, MPI_DOUBLE, 0, 123, comm, &status);
 		//for (int i = 0; i < PARAMETERS_COUNT; i++) {
 		//	printf("par[%d]=%f\n", i, setParmtrsValue[i]);
 		//}
@@ -202,7 +197,6 @@ int main (int argc, char **argv) {
 	//////////////////////////////////////////////////////////////////
 	// Call intagration function
 	//////////////////////////////////////////////////////////////////
-	//fprintf(stdout, "Wellcome to integation\n");
 	double result = 0.;		// result of calculation
 
 		PreIntegration(processorRank, processorSetSize, 1, setParmtrsValue, &result);
